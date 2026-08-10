@@ -5,7 +5,7 @@
   --color-primary-hover: #1d4ed8;
 
   --color-danger: #dc2626;
-  --color-danger-soft: #fef2f2;
+  --color-danger-soft: #fee2e2;
 
   --color-canvas: #f8fafc;
   --color-surface: #ffffff;
@@ -28,6 +28,18 @@
   100% {
     background-position: 0% 50%;
   }
+}
+
+/* Remove as setas de incremento/decremento dos inputs numéricos */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .animated-gradient {

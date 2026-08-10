@@ -1,10 +1,9 @@
-type DashboardProps = {
-  email: string;
-  onLogout: () => void;
-};
-
-const Dashboard: React.FC<DashboardProps> = ({ email, onLogout }) => {
-  return <div className="min-h-screen w-full"></div>;
+const Dashboard: React.FC = () => {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <p className="text-sm text-ink-faint">TO DO</p>
+    </div>
+  );
 };
 
 export default Dashboard;

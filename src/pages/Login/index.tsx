@@ -1,13 +1,13 @@
 import { useState } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Thermometer, Mail, Lock, LogIn } from "lucide-react";
 import Input from "../../components/common/Input";
 import Button from "../../components/common/Button";
+import { useAuth } from "../../contexts/AuthContext";
 
-type LoginProps = {
-  onLogin: (user: string) => void;
-};
-
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC = () => {
+  const { user: loggedInUser, login } = useAuth();
+  const navigate = useNavigate();
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -26,8 +26,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsSubmitting(true);
 
     setIsSubmitting(false);
-    onLogin(user);
+    login(user);
+    navigate("/dashboard", { replace: true });
   };
+
+  if (loggedInUser) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="animated-gradient min-h-screen w-full flex items-center justify-center p-4">
@@ -42,7 +47,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 CEOM
               </p>
               <p className="text-[11px] font-medium uppercase tracking-widest text-ink-muted">
-                Monitor
+                Monitoramento
               </p>
             </div>
           </div>
@@ -104,7 +109,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </div>
 
         <p className="mt-6 text-center text-xs text-ink">
-          Centro de Memória do Oeste de Santa Catarina · UFFS
+          Centro de Memória do Oeste de Santa Catarina - UFFS
         </p>
       </div>
     </div>
