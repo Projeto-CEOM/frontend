@@ -1,1 +1,46 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+
+  --color-ink: #0f172a;
+  --color-ink-soft: #475569;
+  --color-ink-muted: #64748b;
+  --color-ink-faint: #94a3b8;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient {
+  background-color: var(--color-canvas);
+  background-image: linear-gradient(
+    -45deg,
+    rgb(30 58 138 / 45%),
+    rgb(29 78 216 / 40%),
+    rgb(79 70 229 / 40%),
+    rgb(124 58 237 / 40%),
+    rgb(109 40 217 / 40%),
+    rgb(37 99 235 / 40%)
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 16s ease infinite;
+}
