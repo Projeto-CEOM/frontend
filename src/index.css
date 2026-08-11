@@ -9,7 +9,7 @@
 
   --color-canvas: #f8fafc;
   --color-surface: #ffffff;
-  --color-surface-hover: #f1f5f9;
+  --color-surface-hover: #e9eef5;
   --color-border: #e2e8f0;
 
   --color-ink: #0f172a;
@@ -30,7 +30,6 @@
   }
 }
 
-/* Remove as setas de incremento/decremento dos inputs numéricos */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;

@@ -3,19 +3,21 @@ import { ArrowLeft } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Input from "../Input";
 import Button from "../Button";
+import Select from "../Select";
 
 export type RecordFormInputField = {
   id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
-  type?: "text" | "email" | "number" | "textarea";
+  type?: "text" | "email" | "number" | "textarea" | "select";
   icon?: LucideIcon;
   placeholder?: string;
   rows?: number;
   step?: string;
   required?: boolean;
   error?: string;
+  options?: Array<{ value: string; label: string }>;
 };
 
 export type RecordFormFieldGroup = {
@@ -72,7 +74,7 @@ const RecordForm: React.FC<RecordFormProps> = ({
       <button
         type="button"
         onClick={onCancel}
-        className="mb-4 flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink"
+        className="mb-4 flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink hover:bg-surface-hover p-2 rounded-lg"
       >
         <ArrowLeft size={16} strokeWidth={1.8} />
         {cancelLabel}
@@ -83,6 +85,7 @@ const RecordForm: React.FC<RecordFormProps> = ({
 
       <form
         onSubmit={onSubmit}
+        noValidate
         className="mt-6 flex flex-col gap-5 rounded-2xl border border-border bg-surface p-6 shadow-sm md:p-8"
       >
         {fields.map((field) => {
@@ -114,30 +117,53 @@ const RecordForm: React.FC<RecordFormProps> = ({
             );
           }
 
-          return field.type === "textarea" ? (
-            <div key={field.id} className="flex flex-col gap-1.5">
-              <label
-                htmlFor={field.id}
-                className="text-xs font-medium text-ink-soft"
-              >
-                {field.label}
-              </label>
-              <textarea
+          if (field.type === "textarea") {
+            return (
+              <div key={field.id} className="flex flex-col gap-1.5">
+                <label
+                  htmlFor={field.id}
+                  className="text-xs font-medium text-ink-soft"
+                >
+                  {field.label}
+                </label>
+                <textarea
+                  id={field.id}
+                  rows={field.rows ?? 4}
+                  placeholder={field.placeholder}
+                  value={field.value}
+                  required={field.required}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  className={`w-full resize-none rounded-lg border bg-surface/60 px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10 ${
+                    field.error ? "border-danger/40" : "border-border"
+                  }`}
+                />
+                {field.error && (
+                  <p className="text-xs font-medium text-danger">
+                    {field.error}
+                  </p>
+                )}
+              </div>
+            );
+          }
+
+          if (field.type === "select") {
+            return (
+              <Select
+                key={field.id}
                 id={field.id}
-                rows={field.rows ?? 4}
-                placeholder={field.placeholder}
-                value={field.value}
+                label={field.label}
+                icon={field.icon}
                 required={field.required}
-                onChange={(e) => field.onChange(e.target.value)}
-                className={`w-full resize-none rounded-lg border bg-surface/60 px-3 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10 ${
-                  field.error ? "border-danger/40" : "border-border"
-                }`}
+                error={field.error}
+                placeholder={field.placeholder}
+                options={field.options ?? []}
+                value={field.value}
+                onChange={field.onChange}
               />
-              {field.error && (
-                <p className="text-xs font-medium text-danger">{field.error}</p>
-              )}
-            </div>
-          ) : (
+            );
+          }
+
+          return (
             <Input
               key={field.id}
               id={field.id}

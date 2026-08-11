@@ -1,7 +1,7 @@
 import { useEffect, useState, type SyntheticEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  DoorOpen,
+  Cpu,
   Save,
   Plus,
   Trash2,
@@ -16,29 +16,151 @@ import DataTable, {
 import RecordForm, {
   type RecordFormField,
 } from "../../components/common/RecordForm";
-import { useRooms, type Room } from "../../contexts/RoomsContext";
+import { useRooms } from "../../contexts/RoomsContext";
+
+type Sensor = {
+  id: string;
+  identifier: string;
+  roomId: string;
+  tempMin: number;
+  tempMax: number;
+  humidityMin: number;
+  humidityMax: number;
+};
+
+const initialSensors: Sensor[] = [
+  {
+    id: "sensor-1",
+    identifier: "ESP32-01",
+    roomId: "seed-1",
+    tempMin: 18,
+    tempMax: 22,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-2",
+    identifier: "ESP32-02",
+    roomId: "seed-2",
+    tempMin: 19,
+    tempMax: 23,
+    humidityMin: 40,
+    humidityMax: 60,
+  },
+  {
+    id: "sensor-3",
+    identifier: "ESP32-03",
+    roomId: "seed-3",
+    tempMin: 19,
+    tempMax: 23,
+    humidityMin: 40,
+    humidityMax: 60,
+  },
+  {
+    id: "sensor-4",
+    identifier: "ESP32-04",
+    roomId: "seed-4",
+    tempMin: 18,
+    tempMax: 21,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-5",
+    identifier: "ESP32-05",
+    roomId: "seed-5",
+    tempMin: 17,
+    tempMax: 20,
+    humidityMin: 40,
+    humidityMax: 50,
+  },
+  {
+    id: "sensor-6",
+    identifier: "ESP32-06",
+    roomId: "seed-6",
+    tempMin: 18,
+    tempMax: 22,
+    humidityMin: 40,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-7",
+    identifier: "ESP32-07",
+    roomId: "seed-7",
+    tempMin: 19,
+    tempMax: 24,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-8",
+    identifier: "ESP32-08",
+    roomId: "seed-8",
+    tempMin: 20,
+    tempMax: 26,
+    humidityMin: 40,
+    humidityMax: 65,
+  },
+  {
+    id: "sensor-9",
+    identifier: "ESP32-09",
+    roomId: "seed-9",
+    tempMin: 20,
+    tempMax: 25,
+    humidityMin: 40,
+    humidityMax: 65,
+  },
+  {
+    id: "sensor-10",
+    identifier: "ESP32-10",
+    roomId: "seed-10",
+    tempMin: 18,
+    tempMax: 23,
+    humidityMin: 45,
+    humidityMax: 58,
+  },
+  {
+    id: "sensor-11",
+    identifier: "ESP32-11",
+    roomId: "seed-11",
+    tempMin: 16,
+    tempMax: 19,
+    humidityMin: 35,
+    humidityMax: 45,
+  },
+  {
+    id: "sensor-12",
+    identifier: "ESP32-12",
+    roomId: "seed-12",
+    tempMin: 18,
+    tempMax: 21,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+];
 
 const initialFields = {
-  name: "",
-  description: "",
+  identifier: "",
+  roomId: "",
   tempMin: "",
   tempMax: "",
   humidityMin: "",
   humidityMax: "",
 };
 
-const roomToFields = (room: Room) => ({
-  name: room.name,
-  description: room.description,
-  tempMin: String(room.tempMin),
-  tempMax: String(room.tempMax),
-  humidityMin: String(room.humidityMin),
-  humidityMax: String(room.humidityMax),
+const sensorToFields = (sensor: Sensor) => ({
+  identifier: sensor.identifier,
+  roomId: sensor.roomId,
+  tempMin: String(sensor.tempMin),
+  tempMax: String(sensor.tempMax),
+  humidityMin: String(sensor.humidityMin),
+  humidityMax: String(sensor.humidityMax),
 });
 
-const Rooms: React.FC = () => {
+const Sensors: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { rooms, addRoom, updateRoom, removeRoom } = useRooms();
+  const { rooms } = useRooms();
+  const [sensors, setSensors] = useState<Sensor[]>(initialSensors);
   const [fields, setFields] = useState(initialFields);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<
@@ -46,9 +168,9 @@ const Rooms: React.FC = () => {
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const formParam = searchParams.get("sala");
+  const formParam = searchParams.get("sensor");
   const isFormOpen = formParam !== null;
-  const editingRoomId = formParam && formParam !== "nova" ? formParam : null;
+  const editingSensorId = formParam && formParam !== "novo" ? formParam : null;
 
   const pageParam = Number(searchParams.get("page"));
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
@@ -56,12 +178,12 @@ const Rooms: React.FC = () => {
   useEffect(() => {
     if (!formParam) return;
 
-    if (formParam === "nova") {
+    if (formParam === "novo") {
       setFields(initialFields);
     } else {
-      const room = rooms.find((current) => current.id === formParam);
-      if (room) {
-        setFields(roomToFields(room));
+      const sensor = sensors.find((current) => current.id === formParam);
+      if (sensor) {
+        setFields(sensorToFields(sensor));
       }
     }
 
@@ -78,15 +200,44 @@ const Rooms: React.FC = () => {
     });
   };
 
-  const openForm = (room?: Room) => {
+  const handleRoomChange = (roomId: string) => {
+    const room = rooms.find((current) => current.id === roomId);
+
+    setFields((current) => ({
+      ...current,
+      roomId,
+      ...(room
+        ? {
+            tempMin: String(room.tempMin),
+            tempMax: String(room.tempMax),
+            humidityMin: String(room.humidityMin),
+            humidityMax: String(room.humidityMax),
+          }
+        : {}),
+    }));
+
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next.roomId;
+      if (room) {
+        delete next.tempMin;
+        delete next.tempMax;
+        delete next.humidityMin;
+        delete next.humidityMax;
+      }
+      return next;
+    });
+  };
+
+  const openForm = (sensor?: Sensor) => {
     const next = new URLSearchParams(searchParams);
-    next.set("sala", room ? room.id : "nova");
+    next.set("sensor", sensor ? sensor.id : "novo");
     setSearchParams(next);
   };
 
   const closeForm = () => {
     const next = new URLSearchParams(searchParams);
-    next.delete("sala");
+    next.delete("sensor");
     setSearchParams(next);
   };
 
@@ -97,18 +248,22 @@ const Rooms: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    removeRoom(id);
+    setSensors((current) => current.filter((sensor) => sensor.id !== id));
   };
 
   const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const { name, tempMin, tempMax, humidityMin, humidityMax } = fields;
+    const { identifier, roomId, tempMin, tempMax, humidityMin, humidityMax } =
+      fields;
     const nextFieldErrors: Partial<Record<keyof typeof initialFields, string>> =
       {};
 
-    if (!name.trim()) {
-      nextFieldErrors.name = "Preencha o nome da sala.";
+    if (!identifier.trim()) {
+      nextFieldErrors.identifier = "Preencha o identificador do sensor.";
+    }
+    if (!roomId.trim()) {
+      nextFieldErrors.roomId = "Selecione a sala vinculada.";
     }
     if (!tempMin.trim()) {
       nextFieldErrors.tempMin = "Campo obrigatório.";
@@ -162,9 +317,9 @@ const Rooms: React.FC = () => {
     setError("");
     setIsSubmitting(true);
 
-    const roomData = {
-      name: fields.name.trim(),
-      description: fields.description.trim(),
+    const sensorData = {
+      identifier: identifier.trim(),
+      roomId,
       tempMin: Number(tempMin),
       tempMax: Number(tempMax),
       humidityMin: Number(humidityMin),
@@ -172,19 +327,23 @@ const Rooms: React.FC = () => {
     };
 
     setTimeout(() => {
-      const newTotal = editingRoomId ? rooms.length : rooms.length + 1;
+      const newTotal = editingSensorId ? sensors.length : sensors.length + 1;
 
-      if (editingRoomId) {
-        updateRoom(editingRoomId, roomData);
-      } else {
-        addRoom(roomData);
-      }
+      setSensors((current) =>
+        editingSensorId
+          ? current.map((sensor) =>
+              sensor.id === editingSensorId
+                ? { ...sensor, ...sensorData }
+                : sensor,
+            )
+          : [...current, { id: crypto.randomUUID(), ...sensorData }],
+      );
 
       setIsSubmitting(false);
 
       const next = new URLSearchParams(searchParams);
-      next.delete("sala");
-      if (!editingRoomId) {
+      next.delete("sensor");
+      if (!editingSensorId) {
         next.set("page", String(Math.ceil(newTotal / 10)));
       }
       setSearchParams(next);
@@ -193,22 +352,25 @@ const Rooms: React.FC = () => {
 
   const formFields: RecordFormField[] = [
     {
-      id: "name",
-      label: "Nome da sala",
-      icon: DoorOpen,
-      placeholder: "Ex: Reserva Técnica 1",
-      value: fields.name,
-      onChange: (value) => updateField("name", value),
+      id: "identifier",
+      label: "Identificador",
+      icon: Cpu,
+      placeholder: "Ex: ESP32-01",
+      value: fields.identifier,
+      onChange: (value) => updateField("identifier", value),
       required: true,
-      error: fieldErrors.name,
+      error: fieldErrors.identifier,
     },
     {
-      id: "description",
-      label: "Descrição",
-      type: "textarea",
-      placeholder: "Observações sobre o acervo guardado neste espaço",
-      value: fields.description,
-      onChange: (value) => updateField("description", value),
+      id: "roomId",
+      label: "Sala vinculada",
+      type: "select",
+      placeholder: "Selecione uma sala",
+      options: rooms.map((room) => ({ value: room.id, label: room.name })),
+      value: fields.roomId,
+      onChange: handleRoomChange,
+      required: true,
+      error: fieldErrors.roomId,
     },
     {
       groupLabel: "Faixa de temperatura (°C)",
@@ -273,16 +435,16 @@ const Rooms: React.FC = () => {
   if (isFormOpen) {
     return (
       <RecordForm
-        title={editingRoomId ? "Editar sala" : "Cadastro de sala"}
+        title={editingSensorId ? "Editar sensor" : "Cadastro de sensor"}
         subtitle={
-          editingRoomId
-            ? "Atualize as informações e os limites de segurança desta sala."
-            : "Adicione um novo ponto de monitoramento e defina os limites de temperatura e umidade que disparam alertas."
+          editingSensorId
+            ? "Atualize as informações e os limites de segurança deste sensor."
+            : "Vincule o sensor a uma sala — os limites de temperatura e umidade dela preenchem automaticamente, mas podem ser ajustados."
         }
         fields={formFields}
         error={error}
         isSubmitting={isSubmitting}
-        submitLabel={editingRoomId ? "Salvar alterações" : "Salvar sala"}
+        submitLabel={editingSensorId ? "Salvar alterações" : "Salvar sensor"}
         submittingLabel="Salvando..."
         submitIcon={<Save size={16} strokeWidth={1.8} />}
         onSubmit={handleSubmit}
@@ -291,22 +453,23 @@ const Rooms: React.FC = () => {
     );
   }
 
-  const columns: DataTableColumn<Room>[] = [
+  const columns: DataTableColumn<Sensor>[] = [
     {
-      header: "Nome",
+      header: "Identificador",
       align: "left",
       width: "25%",
-      render: (room) => (
-        <span className="font-medium text-ink">{room.name}</span>
+      render: (sensor) => (
+        <span className="font-medium text-ink">{sensor.identifier}</span>
       ),
     },
     {
-      header: "Descrição",
+      header: "Sala",
       align: "left",
       width: "35%",
-      render: (room) => (
+      render: (sensor) => (
         <span className="text-ink-soft">
-          {room.description || "Sem descrição"}
+          {rooms.find((room) => room.id === sensor.roomId)?.name ??
+            "Sala removida"}
         </span>
       ),
     },
@@ -314,9 +477,9 @@ const Rooms: React.FC = () => {
       header: "Temperatura",
       align: "center",
       width: "15%",
-      render: (room) => (
+      render: (sensor) => (
         <span className="text-ink-soft">
-          {room.tempMin}°C – {room.tempMax}°C
+          {sensor.tempMin}°C – {sensor.tempMax}°C
         </span>
       ),
     },
@@ -324,9 +487,9 @@ const Rooms: React.FC = () => {
       header: "Umidade",
       align: "center",
       width: "15%",
-      render: (room) => (
+      render: (sensor) => (
         <span className="text-ink-soft">
-          {room.humidityMin}% – {room.humidityMax}%
+          {sensor.humidityMin}% – {sensor.humidityMax}%
         </span>
       ),
     },
@@ -334,20 +497,20 @@ const Rooms: React.FC = () => {
       header: "Ações",
       align: "center",
       width: "10%",
-      render: (room) => (
+      render: (sensor) => (
         <div className="flex items-center justify-center gap-1">
           <button
             type="button"
-            onClick={() => openForm(room)}
-            aria-label={`Editar ${room.name}`}
+            onClick={() => openForm(sensor)}
+            aria-label={`Editar ${sensor.identifier}`}
             className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-primary/10 hover:text-primary"
           >
             <Pencil size={16} strokeWidth={1.8} />
           </button>
           <button
             type="button"
-            onClick={() => handleDelete(room.id)}
-            aria-label={`Remover ${room.name}`}
+            onClick={() => handleDelete(sensor.id)}
+            aria-label={`Remover ${sensor.identifier}`}
             className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-danger-soft hover:text-danger"
           >
             <Trash2 size={16} strokeWidth={1.8} />
@@ -361,9 +524,9 @@ const Rooms: React.FC = () => {
     <div className="px-6 py-10 md:px-10">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-ink">Salas</h1>
+          <h1 className="text-2xl font-semibold text-ink">Sensores</h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Pontos de monitoramento cadastrados.
+            Dispositivos de coleta cadastrados e as salas que monitoram.
           </p>
         </div>
 
@@ -371,22 +534,22 @@ const Rooms: React.FC = () => {
           icon={<Plus size={16} strokeWidth={1.8} />}
           onClick={() => openForm()}
         >
-          Nova sala
+          Novo sensor
         </Button>
       </div>
 
       <div className="mt-6">
         <DataTable
           columns={columns}
-          data={rooms}
-          getRowKey={(room) => room.id}
+          data={sensors}
+          getRowKey={(sensor) => sensor.id}
           page={page}
           onPageChange={goToPage}
-          emptyMessage="Nenhuma sala cadastrada ainda."
+          emptyMessage="Nenhum sensor cadastrado ainda."
         />
       </div>
     </div>
   );
 };
 
-export default Rooms;
+export default Sensors;
