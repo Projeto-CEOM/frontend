@@ -3,8 +3,8 @@ import { USE_MOCK_SENSORS } from "./config";
 import { mockSensorsApi } from "./mock";
 import type { CrudApi, Sensor, SensorPayload } from "./types";
 
-const COLLECTION = "/api/sensors/";
-const item = (id: string) => `/api/sensors/${id}`;
+const COLLECTION = "/api/sensor/";
+const item = (id: string) => `/api/sensor/${id}`;
 
 const httpSensorsApi: CrudApi<Sensor, SensorPayload> = {
   list: () => api.get<Sensor[]>(COLLECTION),
