@@ -17,6 +17,7 @@ import RecordForm, {
   type RecordFormField,
 } from "../../components/common/RecordForm";
 import { useRooms, type Room } from "../../contexts/RoomsContext";
+import axios from "axios";
 
 const initialFields = {
   name: "",
@@ -100,7 +101,7 @@ const Rooms: React.FC = () => {
     removeRoom(id);
   };
 
-  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const { name, tempMin, tempMax, humidityMin, humidityMax } = fields;
@@ -170,6 +171,27 @@ const Rooms: React.FC = () => {
       humidityMin: Number(humidityMin),
       humidityMax: Number(humidityMax),
     };
+
+    const baseUrl = "https://localhost:6767";
+    console.log(editingRoomId);
+
+    if (editingRoomId != null) {
+      await axios.put(`${baseUrl}/api/rooms/${editingRoomId}`, roomData)
+        .then((res) => {
+          // handle response
+        })
+        .catch((err) => {
+          //handle error
+        });
+    } else {
+      await axios.post(baseUrl + "/api/rooms/", roomData)
+        .then((res) => {
+          // handle response
+        })
+        .catch((err) => {
+          //handle error
+        });
+    }
 
     setTimeout(() => {
       const newTotal = editingRoomId ? rooms.length : rooms.length + 1;
