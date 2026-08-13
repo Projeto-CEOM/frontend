@@ -16,7 +16,36 @@ type DataTableProps<T> = {
   onPageChange: (page: number) => void;
   pageSize?: number;
   emptyMessage?: string;
+  /**
+   * Só na primeira carga (sem nada em cache). Revalidações e mutations
+   * otimistas mantêm a lista na tela — nunca mostram placeholder.
+   */
+  isLoading?: boolean;
+  skeletonRows?: number;
 };
+
+const alignClass = (align?: "left" | "right" | "center") =>
+  align === "right"
+    ? "text-right"
+    : align === "center"
+      ? "text-center"
+      : "text-left";
+
+const SkeletonBar: React.FC<{ align?: "left" | "right" | "center" }> = ({
+  align,
+}) => (
+  <span
+    className={`flex ${
+      align === "right"
+        ? "justify-end"
+        : align === "center"
+          ? "justify-center"
+          : "justify-start"
+    }`}
+  >
+    <span className="block h-3.5 w-3/5 animate-pulse rounded-full bg-border" />
+  </span>
+);
 
 const DataTable = <T,>({
   columns,
@@ -26,7 +55,12 @@ const DataTable = <T,>({
   onPageChange,
   pageSize = 10,
   emptyMessage = "Nenhum item encontrado.",
+  isLoading = false,
+  skeletonRows = 5,
 }: DataTableProps<T>) => {
+  // Havendo dados (inclusive os otimistas), a tabela nunca volta ao placeholder.
+  const showSkeleton = isLoading && data.length === 0;
+
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * pageSize;
@@ -48,13 +82,7 @@ const DataTable = <T,>({
             {columns.map((column) => (
               <th
                 key={column.header}
-                className={`px-6 py-3 font-medium ${
-                  column.align === "right"
-                    ? "text-right"
-                    : column.align === "center"
-                      ? "text-center"
-                      : "text-left"
-                }`}
+                className={`px-6 py-3 font-medium ${alignClass(column.align)}`}
               >
                 {column.header}
               </th>
@@ -62,29 +90,38 @@ const DataTable = <T,>({
           </tr>
         </thead>
         <tbody>
-          {paginatedData.map((row) => (
-            <tr
-              key={getRowKey(row)}
-              className="border-b border-border last:border-0 hover:bg-surface-hover"
-            >
-              {columns.map((column) => (
-                <td
-                  key={column.header}
-                  className={`px-6 py-4 ${
-                    column.align === "right"
-                      ? "text-right"
-                      : column.align === "center"
-                        ? "text-center"
-                        : "text-left"
-                  }`}
-                >
-                  {column.render(row)}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {showSkeleton &&
+            Array.from({ length: skeletonRows }).map((_, rowIndex) => (
+              <tr
+                key={`skeleton-${rowIndex}`}
+                className="border-b border-border last:border-0"
+              >
+                {columns.map((column) => (
+                  <td key={column.header} className="px-6 py-4">
+                    <SkeletonBar align={column.align} />
+                  </td>
+                ))}
+              </tr>
+            ))}
 
-          {data.length === 0 && (
+          {!showSkeleton &&
+            paginatedData.map((row) => (
+              <tr
+                key={getRowKey(row)}
+                className="border-b border-border last:border-0 hover:bg-surface-hover"
+              >
+                {columns.map((column) => (
+                  <td
+                    key={column.header}
+                    className={`px-6 py-4 ${alignClass(column.align)}`}
+                  >
+                    {column.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+
+          {!showSkeleton && data.length === 0 && (
             <tr>
               <td
                 colSpan={columns.length}
@@ -98,13 +135,17 @@ const DataTable = <T,>({
       </table>
 
       <div className="flex items-center justify-between border-t border-border px-6 py-3">
-        <p className="text-xs text-ink-faint">
-          {data.length === 0
-            ? emptyMessage
-            : `${start + 1}–${Math.min(start + pageSize, data.length)} de ${data.length}`}
-        </p>
+        {showSkeleton ? (
+          <span className="block h-3 w-24 animate-pulse rounded-full bg-border" />
+        ) : (
+          <p className="text-xs text-ink-faint">
+            {data.length === 0
+              ? emptyMessage
+              : `${start + 1}–${Math.min(start + pageSize, data.length)} de ${data.length}`}
+          </p>
+        )}
 
-        {totalPages > 1 && (
+        {!showSkeleton && totalPages > 1 && (
           <div className="flex items-center gap-1">
             <button
               type="button"

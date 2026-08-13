@@ -1,36 +1,35 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Thermometer, Mail, Lock, LogIn } from "lucide-react";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import { useAuth } from "../../contexts/AuthContext";
+import Input from "@/components/common/Input";
+import Button from "@/components/common/Button";
+import { useAuth } from "@/hooks/UseAuth";
+import { loginSchema, type LoginFormValues } from "./schema";
 
 const Login: React.FC = () => {
-  const { user: loggedInUser, login } = useAuth();
+  const { isAuthenticated, login, isLoggingIn, loginError } = useAuth();
   const navigate = useNavigate();
-  const [user, setUser] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: yupResolver(loginSchema),
+    defaultValues: { email: "", password: "", rememberMe: false },
+  });
 
-    if (!user.trim() || !password.trim()) {
-      setError("Preencha usuário e senha para continuar.");
-      return;
+  const onSubmit = handleSubmit(async (values) => {
+    try {
+      await login(values);
+      navigate("/dashboard", { replace: true });
+    } catch {
+      // Falha exibida abaixo a partir de `loginError`.
     }
+  });
 
-    setError("");
-    setIsSubmitting(true);
-
-    setIsSubmitting(false);
-    login(user);
-    navigate("/dashboard", { replace: true });
-  };
-
-  if (loggedInUser) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -57,16 +56,16 @@ const Login: React.FC = () => {
             Entre com suas credenciais para acessar o monitoramento do acervo.
           </p>
 
-          <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
+          <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit} noValidate>
             <Input
-              id="user"
+              id="email"
               type="email"
-              label="Usuário"
+              label="Usuário"
               icon={Mail}
-              autoComplete="user"
+              autoComplete="username"
               placeholder="user@domain"
-              value={user}
-              onChange={(e) => setUser(e.target.value)}
+              error={errors.email?.message}
+              {...register("email")}
             />
 
             <Input
@@ -76,32 +75,31 @@ const Login: React.FC = () => {
               icon={Lock}
               autoComplete="current-password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              error={errors.password?.message}
+              {...register("password")}
             />
 
             <label className="flex select-none items-center gap-2 text-sm text-ink-soft">
               <input
                 type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 rounded border-border accent-primary focus:ring-primary/30"
+                {...register("rememberMe")}
               />
               Lembrar de mim
             </label>
 
-            {error && (
+            {loginError && (
               <p className="rounded-lg bg-danger-soft/90 px-3 py-2 text-xs font-medium text-danger">
-                {error}
+                {loginError.message}
               </p>
             )}
 
             <Button
               type="submit"
-              loading={isSubmitting}
+              loading={isLoggingIn}
               loadingText="Entrando..."
               icon={<LogIn size={16} strokeWidth={1.8} />}
-              disabled={isSubmitting}
+              disabled={isLoggingIn}
             >
               Entrar
             </Button>

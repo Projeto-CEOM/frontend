@@ -1,172 +1,22 @@
-import { useEffect, useState, type SyntheticEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  Cpu,
-  Save,
-  Plus,
-  Trash2,
-  Pencil,
-  Thermometer,
-  Droplets,
-} from "lucide-react";
-import Button from "../../components/common/Button";
+import { Plus, Trash2, Pencil } from "lucide-react";
+import { useRooms } from "@/api/queries/useRooms";
+import { useDeleteSensor, useSensors } from "@/api/queries/useSensors";
+import type { Sensor } from "@/api/sensors";
+import Button from "@/components/common/Button";
 import DataTable, {
   type DataTableColumn,
-} from "../../components/common/DataTable";
-import RecordForm, {
-  type RecordFormField,
-} from "../../components/common/RecordForm";
-import { useRooms } from "../../contexts/RoomsContext";
+} from "@/components/common/DataTable";
+import { formatRange } from "@/utils/format";
+import SensorForm from "./SensorForm";
 
-type Sensor = {
-  id: string;
-  identifier: string;
-  roomId: string;
-  tempMin: number;
-  tempMax: number;
-  humidityMin: number;
-  humidityMax: number;
-};
-
-const initialSensors: Sensor[] = [
-  {
-    id: "sensor-1",
-    identifier: "ESP32-01",
-    roomId: "seed-1",
-    tempMin: 18,
-    tempMax: 22,
-    humidityMin: 45,
-    humidityMax: 55,
-  },
-  {
-    id: "sensor-2",
-    identifier: "ESP32-02",
-    roomId: "seed-2",
-    tempMin: 19,
-    tempMax: 23,
-    humidityMin: 40,
-    humidityMax: 60,
-  },
-  {
-    id: "sensor-3",
-    identifier: "ESP32-03",
-    roomId: "seed-3",
-    tempMin: 19,
-    tempMax: 23,
-    humidityMin: 40,
-    humidityMax: 60,
-  },
-  {
-    id: "sensor-4",
-    identifier: "ESP32-04",
-    roomId: "seed-4",
-    tempMin: 18,
-    tempMax: 21,
-    humidityMin: 45,
-    humidityMax: 55,
-  },
-  {
-    id: "sensor-5",
-    identifier: "ESP32-05",
-    roomId: "seed-5",
-    tempMin: 17,
-    tempMax: 20,
-    humidityMin: 40,
-    humidityMax: 50,
-  },
-  {
-    id: "sensor-6",
-    identifier: "ESP32-06",
-    roomId: "seed-6",
-    tempMin: 18,
-    tempMax: 22,
-    humidityMin: 40,
-    humidityMax: 55,
-  },
-  {
-    id: "sensor-7",
-    identifier: "ESP32-07",
-    roomId: "seed-7",
-    tempMin: 19,
-    tempMax: 24,
-    humidityMin: 45,
-    humidityMax: 55,
-  },
-  {
-    id: "sensor-8",
-    identifier: "ESP32-08",
-    roomId: "seed-8",
-    tempMin: 20,
-    tempMax: 26,
-    humidityMin: 40,
-    humidityMax: 65,
-  },
-  {
-    id: "sensor-9",
-    identifier: "ESP32-09",
-    roomId: "seed-9",
-    tempMin: 20,
-    tempMax: 25,
-    humidityMin: 40,
-    humidityMax: 65,
-  },
-  {
-    id: "sensor-10",
-    identifier: "ESP32-10",
-    roomId: "seed-10",
-    tempMin: 18,
-    tempMax: 23,
-    humidityMin: 45,
-    humidityMax: 58,
-  },
-  {
-    id: "sensor-11",
-    identifier: "ESP32-11",
-    roomId: "seed-11",
-    tempMin: 16,
-    tempMax: 19,
-    humidityMin: 35,
-    humidityMax: 45,
-  },
-  {
-    id: "sensor-12",
-    identifier: "ESP32-12",
-    roomId: "seed-12",
-    tempMin: 18,
-    tempMax: 21,
-    humidityMin: 45,
-    humidityMax: 55,
-  },
-];
-
-const initialFields = {
-  identifier: "",
-  roomId: "",
-  tempMin: "",
-  tempMax: "",
-  humidityMin: "",
-  humidityMax: "",
-};
-
-const sensorToFields = (sensor: Sensor) => ({
-  identifier: sensor.identifier,
-  roomId: sensor.roomId,
-  tempMin: String(sensor.tempMin),
-  tempMax: String(sensor.tempMax),
-  humidityMin: String(sensor.humidityMin),
-  humidityMax: String(sensor.humidityMax),
-});
+const PAGE_SIZE = 10;
 
 const Sensors: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { rooms } = useRooms();
-  const [sensors, setSensors] = useState<Sensor[]>(initialSensors);
-  const [fields, setFields] = useState(initialFields);
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof typeof initialFields, string>>
-  >({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: sensors = [], isLoading, isError, error } = useSensors();
+  const { data: rooms = [] } = useRooms();
+  const deleteSensor = useDeleteSensor();
 
   const formParam = searchParams.get("sensor");
   const isFormOpen = formParam !== null;
@@ -174,60 +24,6 @@ const Sensors: React.FC = () => {
 
   const pageParam = Number(searchParams.get("page"));
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
-
-  useEffect(() => {
-    if (!formParam) return;
-
-    if (formParam === "novo") {
-      setFields(initialFields);
-    } else {
-      const sensor = sensors.find((current) => current.id === formParam);
-      if (sensor) {
-        setFields(sensorToFields(sensor));
-      }
-    }
-
-    setError("");
-    setFieldErrors({});
-  }, [formParam]);
-
-  const updateField = (key: keyof typeof initialFields, value: string) => {
-    setFields((current) => ({ ...current, [key]: value }));
-    setFieldErrors((current) => {
-      if (!current[key]) return current;
-      const { [key]: _removed, ...rest } = current;
-      return rest;
-    });
-  };
-
-  const handleRoomChange = (roomId: string) => {
-    const room = rooms.find((current) => current.id === roomId);
-
-    setFields((current) => ({
-      ...current,
-      roomId,
-      ...(room
-        ? {
-            tempMin: String(room.tempMin),
-            tempMax: String(room.tempMax),
-            humidityMin: String(room.humidityMin),
-            humidityMax: String(room.humidityMax),
-          }
-        : {}),
-    }));
-
-    setFieldErrors((current) => {
-      const next = { ...current };
-      delete next.roomId;
-      if (room) {
-        delete next.tempMin;
-        delete next.tempMax;
-        delete next.humidityMin;
-        delete next.humidityMax;
-      }
-      return next;
-    });
-  };
 
   const openForm = (sensor?: Sensor) => {
     const next = new URLSearchParams(searchParams);
@@ -247,208 +43,21 @@ const Sensors: React.FC = () => {
     setSearchParams(next);
   };
 
-  const handleDelete = (id: string) => {
-    setSensors((current) => current.filter((sensor) => sensor.id !== id));
+  const handleSaved = (created: boolean) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("sensor");
+    if (created) {
+      next.set("page", String(Math.ceil((sensors.length + 1) / PAGE_SIZE)));
+    }
+    setSearchParams(next);
   };
-
-  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const { identifier, roomId, tempMin, tempMax, humidityMin, humidityMax } =
-      fields;
-    const nextFieldErrors: Partial<Record<keyof typeof initialFields, string>> =
-      {};
-
-    if (!identifier.trim()) {
-      nextFieldErrors.identifier = "Preencha o identificador do sensor.";
-    }
-    if (!roomId.trim()) {
-      nextFieldErrors.roomId = "Selecione a sala vinculada.";
-    }
-    if (!tempMin.trim()) {
-      nextFieldErrors.tempMin = "Campo obrigatório.";
-    }
-    if (!tempMax.trim()) {
-      nextFieldErrors.tempMax = "Campo obrigatório.";
-    }
-    if (!humidityMin.trim()) {
-      nextFieldErrors.humidityMin = "Campo obrigatório.";
-    }
-    if (!humidityMax.trim()) {
-      nextFieldErrors.humidityMax = "Campo obrigatório.";
-    }
-
-    if (
-      !nextFieldErrors.tempMin &&
-      !nextFieldErrors.tempMax &&
-      Number(tempMin) >= Number(tempMax)
-    ) {
-      nextFieldErrors.tempMin = "Deve ser menor que a máxima.";
-      nextFieldErrors.tempMax = "Deve ser maior que a mínima.";
-    }
-
-    if (!nextFieldErrors.humidityMin) {
-      if (Number(humidityMin) < 0 || Number(humidityMin) > 100) {
-        nextFieldErrors.humidityMin = "Deve ficar entre 0% e 100%.";
-      }
-    }
-    if (!nextFieldErrors.humidityMax) {
-      if (Number(humidityMax) < 0 || Number(humidityMax) > 100) {
-        nextFieldErrors.humidityMax = "Deve ficar entre 0% e 100%.";
-      }
-    }
-
-    if (
-      !nextFieldErrors.humidityMin &&
-      !nextFieldErrors.humidityMax &&
-      Number(humidityMin) >= Number(humidityMax)
-    ) {
-      nextFieldErrors.humidityMin = "Deve ser menor que a máxima.";
-      nextFieldErrors.humidityMax = "Deve ser maior que a mínima.";
-    }
-
-    setFieldErrors(nextFieldErrors);
-
-    if (Object.keys(nextFieldErrors).length > 0) {
-      setError("Corrija os campos destacados abaixo.");
-      return;
-    }
-
-    setError("");
-    setIsSubmitting(true);
-
-    const sensorData = {
-      identifier: identifier.trim(),
-      roomId,
-      tempMin: Number(tempMin),
-      tempMax: Number(tempMax),
-      humidityMin: Number(humidityMin),
-      humidityMax: Number(humidityMax),
-    };
-
-    setTimeout(() => {
-      const newTotal = editingSensorId ? sensors.length : sensors.length + 1;
-
-      setSensors((current) =>
-        editingSensorId
-          ? current.map((sensor) =>
-              sensor.id === editingSensorId
-                ? { ...sensor, ...sensorData }
-                : sensor,
-            )
-          : [...current, { id: crypto.randomUUID(), ...sensorData }],
-      );
-
-      setIsSubmitting(false);
-
-      const next = new URLSearchParams(searchParams);
-      next.delete("sensor");
-      if (!editingSensorId) {
-        next.set("page", String(Math.ceil(newTotal / 10)));
-      }
-      setSearchParams(next);
-    }, 500);
-  };
-
-  const formFields: RecordFormField[] = [
-    {
-      id: "identifier",
-      label: "Identificador",
-      icon: Cpu,
-      placeholder: "Ex: ESP32-01",
-      value: fields.identifier,
-      onChange: (value) => updateField("identifier", value),
-      required: true,
-      error: fieldErrors.identifier,
-    },
-    {
-      id: "roomId",
-      label: "Sala vinculada",
-      type: "select",
-      placeholder: "Selecione uma sala",
-      options: rooms.map((room) => ({ value: room.id, label: room.name })),
-      value: fields.roomId,
-      onChange: handleRoomChange,
-      required: true,
-      error: fieldErrors.roomId,
-    },
-    {
-      groupLabel: "Faixa de temperatura (°C)",
-      fields: [
-        {
-          id: "tempMin",
-          type: "number",
-          step: "0.1",
-          icon: Thermometer,
-          placeholder: "Mínima",
-          value: fields.tempMin,
-          onChange: (value) => updateField("tempMin", value),
-          required: true,
-          error: fieldErrors.tempMin,
-        },
-        {
-          id: "tempMax",
-          type: "number",
-          step: "0.1",
-          icon: Thermometer,
-          placeholder: "Máxima",
-          value: fields.tempMax,
-          onChange: (value) => updateField("tempMax", value),
-          required: true,
-          error: fieldErrors.tempMax,
-        },
-      ],
-    },
-    {
-      groupLabel: "Faixa de umidade relativa (%)",
-      fields: [
-        {
-          id: "humidityMin",
-          type: "number",
-          step: "1",
-          min: "0",
-          max: "100",
-          icon: Droplets,
-          placeholder: "Mínima",
-          value: fields.humidityMin,
-          onChange: (value) => updateField("humidityMin", value),
-          required: true,
-          error: fieldErrors.humidityMin,
-        },
-        {
-          id: "humidityMax",
-          type: "number",
-          step: "1",
-          min: "0",
-          max: "100",
-          icon: Droplets,
-          placeholder: "Máxima",
-          value: fields.humidityMax,
-          onChange: (value) => updateField("humidityMax", value),
-          required: true,
-          error: fieldErrors.humidityMax,
-        },
-      ],
-    },
-  ];
 
   if (isFormOpen) {
     return (
-      <RecordForm
-        title={editingSensorId ? "Editar sensor" : "Cadastro de sensor"}
-        subtitle={
-          editingSensorId
-            ? "Atualize as informações e os limites de segurança deste sensor."
-            : "Vincule o sensor a uma sala — os limites de temperatura e umidade dela preenchem automaticamente, mas podem ser ajustados."
-        }
-        fields={formFields}
-        error={error}
-        isSubmitting={isSubmitting}
-        submitLabel={editingSensorId ? "Salvar alterações" : "Salvar sensor"}
-        submittingLabel="Salvando..."
-        submitIcon={<Save size={16} strokeWidth={1.8} />}
-        onSubmit={handleSubmit}
+      <SensorForm
+        sensorId={editingSensorId}
         onCancel={closeForm}
+        onSaved={handleSaved}
       />
     );
   }
@@ -479,7 +88,7 @@ const Sensors: React.FC = () => {
       width: "15%",
       render: (sensor) => (
         <span className="text-ink-soft">
-          {sensor.tempMin}°C – {sensor.tempMax}°C
+          {formatRange(sensor.tempMin, sensor.tempMax, "°C")}
         </span>
       ),
     },
@@ -489,7 +98,7 @@ const Sensors: React.FC = () => {
       width: "15%",
       render: (sensor) => (
         <span className="text-ink-soft">
-          {sensor.humidityMin}% – {sensor.humidityMax}%
+          {formatRange(sensor.humidityMin, sensor.humidityMax, "%")}
         </span>
       ),
     },
@@ -509,7 +118,7 @@ const Sensors: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => handleDelete(sensor.id)}
+            onClick={() => deleteSensor.mutate(sensor.id)}
             aria-label={`Remover ${sensor.identifier}`}
             className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-danger-soft hover:text-danger"
           >
@@ -538,6 +147,12 @@ const Sensors: React.FC = () => {
         </Button>
       </div>
 
+      {isError && sensors.length === 0 && (
+        <p className="mt-6 rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+          {error.message}
+        </p>
+      )}
+
       <div className="mt-6">
         <DataTable
           columns={columns}
@@ -545,6 +160,8 @@ const Sensors: React.FC = () => {
           getRowKey={(sensor) => sensor.id}
           page={page}
           onPageChange={goToPage}
+          pageSize={PAGE_SIZE}
+          isLoading={isLoading}
           emptyMessage="Nenhum sensor cadastrado ainda."
         />
       </div>

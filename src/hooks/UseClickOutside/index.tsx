@@ -5,7 +5,10 @@ export const useClickOutside = <T extends HTMLElement>(
   onClickOutside: () => void,
 ) => {
   const callbackRef = useRef(onClickOutside);
-  callbackRef.current = onClickOutside;
+
+  useEffect(() => {
+    callbackRef.current = onClickOutside;
+  }, [onClickOutside]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

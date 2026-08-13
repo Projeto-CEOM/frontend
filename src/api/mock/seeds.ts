@@ -1,16 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import type { Room, Sensor } from "../types";
 
-export type Room = {
-  id: string;
-  name: string;
-  description: string;
-  tempMin: number;
-  tempMax: number;
-  humidityMin: number;
-  humidityMax: number;
-};
-
-const initialRooms: Room[] = [
+export const seedRooms: Room[] = [
   {
     id: "seed-1",
     name: "Reserva Técnica 1",
@@ -139,49 +129,113 @@ const initialRooms: Room[] = [
   },
 ];
 
-type RoomsContextValue = {
-  rooms: Room[];
-  addRoom: (room: Omit<Room, "id">) => Room;
-  updateRoom: (id: string, room: Omit<Room, "id">) => void;
-  removeRoom: (id: string) => void;
-};
-
-const RoomsContext = createContext<RoomsContextValue | undefined>(undefined);
-
-export const RoomsProvider = ({ children }: { children: ReactNode }) => {
-  const [rooms, setRooms] = useState<Room[]>(initialRooms);
-
-  const addRoom = (room: Omit<Room, "id">) => {
-    const newRoom: Room = { id: crypto.randomUUID(), ...room };
-    setRooms((current) => [...current, newRoom]);
-    return newRoom;
-  };
-
-  const updateRoom = (id: string, room: Omit<Room, "id">) => {
-    setRooms((current) =>
-      current.map((current_) =>
-        current_.id === id ? { ...current_, ...room } : current_,
-      ),
-    );
-  };
-
-  const removeRoom = (id: string) => {
-    setRooms((current) => current.filter((room) => room.id !== id));
-  };
-
-  return (
-    <RoomsContext.Provider value={{ rooms, addRoom, updateRoom, removeRoom }}>
-      {children}
-    </RoomsContext.Provider>
-  );
-};
-
-export const useRooms = () => {
-  const context = useContext(RoomsContext);
-
-  if (!context) {
-    throw new Error("useRooms deve ser usado dentro de um RoomsProvider");
-  }
-
-  return context;
-};
+export const seedSensors: Sensor[] = [
+  {
+    id: "sensor-1",
+    identifier: "ESP32-01",
+    roomId: "seed-1",
+    tempMin: 18,
+    tempMax: 22,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-2",
+    identifier: "ESP32-02",
+    roomId: "seed-2",
+    tempMin: 19,
+    tempMax: 23,
+    humidityMin: 40,
+    humidityMax: 60,
+  },
+  {
+    id: "sensor-3",
+    identifier: "ESP32-03",
+    roomId: "seed-3",
+    tempMin: 19,
+    tempMax: 23,
+    humidityMin: 40,
+    humidityMax: 60,
+  },
+  {
+    id: "sensor-4",
+    identifier: "ESP32-04",
+    roomId: "seed-4",
+    tempMin: 18,
+    tempMax: 21,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-5",
+    identifier: "ESP32-05",
+    roomId: "seed-5",
+    tempMin: 17,
+    tempMax: 20,
+    humidityMin: 40,
+    humidityMax: 50,
+  },
+  {
+    id: "sensor-6",
+    identifier: "ESP32-06",
+    roomId: "seed-6",
+    tempMin: 18,
+    tempMax: 22,
+    humidityMin: 40,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-7",
+    identifier: "ESP32-07",
+    roomId: "seed-7",
+    tempMin: 19,
+    tempMax: 24,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+  {
+    id: "sensor-8",
+    identifier: "ESP32-08",
+    roomId: "seed-8",
+    tempMin: 20,
+    tempMax: 26,
+    humidityMin: 40,
+    humidityMax: 65,
+  },
+  {
+    id: "sensor-9",
+    identifier: "ESP32-09",
+    roomId: "seed-9",
+    tempMin: 20,
+    tempMax: 25,
+    humidityMin: 40,
+    humidityMax: 65,
+  },
+  {
+    id: "sensor-10",
+    identifier: "ESP32-10",
+    roomId: "seed-10",
+    tempMin: 18,
+    tempMax: 23,
+    humidityMin: 45,
+    humidityMax: 58,
+  },
+  {
+    id: "sensor-11",
+    identifier: "ESP32-11",
+    roomId: "seed-11",
+    tempMin: 16,
+    tempMax: 19,
+    humidityMin: 35,
+    humidityMax: 45,
+  },
+  {
+    id: "sensor-12",
+    identifier: "ESP32-12",
+    roomId: "seed-12",
+    tempMin: 18,
+    tempMax: 21,
+    humidityMin: 45,
+    humidityMax: 55,
+  },
+];

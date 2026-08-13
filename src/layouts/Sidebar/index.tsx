@@ -9,8 +9,18 @@ import {
   CircuitBoard,
   Send,
   FileText,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+import { cn } from "@/utils/cn";
+import { useAuth } from "@/hooks/UseAuth";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+  mobileNavClosed,
+  selectMobileNavOpen,
+  selectSidebarCollapsed,
+  sidebarToggled,
+} from "@/store/slices/layoutSlice";
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -22,8 +32,12 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
 
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const collapsed = useAppSelector(selectSidebarCollapsed);
+  const mobileNavOpen = useAppSelector(selectMobileNavOpen);
   const navigate = useNavigate();
-  const initial = (user ?? "").trim().charAt(0).toUpperCase() || "?";
+
+  const initial = (user?.name ?? "").trim().charAt(0).toUpperCase() || "?";
 
   const handleLogout = () => {
     logout();
@@ -31,36 +45,62 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col border-r border-border bg-surface">
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white">
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 flex h-screen shrink-0 flex-col border-r border-border bg-surface transition-[width,transform] duration-200 md:static md:translate-x-0",
+        collapsed ? "w-19" : "w-64",
+        mobileNavOpen ? "translate-x-0" : "-translate-x-full",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2.5 px-5 py-5",
+          collapsed && "justify-center px-0",
+        )}
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
           <Thermometer size={18} strokeWidth={1.8} />
         </div>
-        <div className="leading-tight">
-          <p className="text-sm font-bold uppercase tracking-tight text-ink">
-            PROJETO CEOM
-          </p>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-ink-muted">
-            Monitoramento
-          </p>
-        </div>
+        {!collapsed && (
+          <div className="leading-tight">
+            <p className="text-sm font-bold uppercase tracking-tight text-ink">
+              PROJETO CEOM
+            </p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-ink-muted">
+              Monitoramento
+            </p>
+          </div>
+        )}
       </div>
 
-      <button className="mx-3 mb-12 flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5 hover:bg-primary-hover/10">
+      <button
+        type="button"
+        title={user?.email}
+        className={cn(
+          "mx-3 mb-12 flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5 hover:bg-primary-hover/10",
+          collapsed && "justify-center px-0",
+        )}
+      >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
           {initial}
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-ink">
-            {user}
-          </span>
-          <span className="block truncate text-xs text-ink-faint">Conta</span>
-        </span>
-        <ChevronDown
-          size={16}
-          strokeWidth={1.8}
-          className="shrink-0 text-ink-faint"
-        />
+        {!collapsed && (
+          <>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-left text-sm font-medium text-ink">
+                {user?.name}
+              </span>
+              <span className="block truncate text-left text-xs text-ink-faint">
+                {user?.email ?? "Conta"}
+              </span>
+            </span>
+            <ChevronDown
+              size={16}
+              strokeWidth={1.8}
+              className="shrink-0 text-ink-faint"
+            />
+          </>
+        )}
       </button>
 
       <nav className="flex flex-1 flex-col gap-3 px-3 pt-2">
@@ -68,28 +108,53 @@ const Sidebar: React.FC = () => {
           <NavLink
             key={to}
             to={to}
+            title={collapsed ? label : undefined}
+            onClick={() => dispatch(mobileNavClosed())}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                collapsed && "justify-center px-0",
                 isActive
                   ? "bg-primary/10 text-primary"
-                  : "text-ink-soft hover:bg-surface-hover"
-              }`
+                  : "text-ink-soft hover:bg-surface-hover",
+              )
             }
           >
-            <Icon size={17} strokeWidth={1.8} />
-            {label}
+            <Icon size={17} strokeWidth={1.8} className="shrink-0" />
+            {!collapsed && label}
           </NavLink>
         ))}
       </nav>
 
-      <div className="border-t border-border p-3">
+      <div className="flex flex-col gap-1 border-t border-border p-3">
+        <button
+          type="button"
+          onClick={() => dispatch(sidebarToggled())}
+          title={collapsed ? "Expandir menu" : "Recolher menu"}
+          className={cn(
+            "hidden items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-hover md:flex",
+            collapsed && "justify-center px-0",
+          )}
+        >
+          {collapsed ? (
+            <PanelLeftOpen size={17} strokeWidth={1.8} className="shrink-0" />
+          ) : (
+            <PanelLeftClose size={17} strokeWidth={1.8} className="shrink-0" />
+          )}
+          {!collapsed && "Recolher menu"}
+        </button>
+
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-danger-soft hover:text-danger"
+          title={collapsed ? "Sair" : undefined}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-danger-soft hover:text-danger",
+            collapsed && "justify-center px-0",
+          )}
         >
-          <LogOut size={17} strokeWidth={1.8} />
-          Sair
+          <LogOut size={17} strokeWidth={1.8} className="shrink-0" />
+          {!collapsed && "Sair"}
         </button>
       </div>
     </aside>

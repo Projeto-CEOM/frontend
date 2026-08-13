@@ -1,10 +1,11 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAppSelector } from "@/store/hooks";
+import { selectIsAuthenticated } from "@/store/slices/authSlice";
 
 const PrivateRouter: React.FC = () => {
-  const { user } = useAuth();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 

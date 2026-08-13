@@ -1,51 +1,20 @@
-import { useEffect, useState, type SyntheticEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  DoorOpen,
-  Save,
-  Plus,
-  Trash2,
-  Pencil,
-  Thermometer,
-  Droplets,
-} from "lucide-react";
-import Button from "../../components/common/Button";
+import { Plus, Trash2, Pencil } from "lucide-react";
+import { useDeleteRoom, useRooms } from "@/api/queries/useRooms";
+import type { Room } from "@/api/rooms";
+import Button from "@/components/common/Button";
 import DataTable, {
   type DataTableColumn,
-} from "../../components/common/DataTable";
-import RecordForm, {
-  type RecordFormField,
-} from "../../components/common/RecordForm";
-import { useRooms, type Room } from "../../contexts/RoomsContext";
-import axios from "axios";
+} from "@/components/common/DataTable";
+import { formatRange } from "@/utils/format";
+import RoomForm from "./RoomForm";
 
-const initialFields = {
-  name: "",
-  description: "",
-  tempMin: "",
-  tempMax: "",
-  humidityMin: "",
-  humidityMax: "",
-};
-
-const roomToFields = (room: Room) => ({
-  name: room.name,
-  description: room.description,
-  tempMin: String(room.tempMin),
-  tempMax: String(room.tempMax),
-  humidityMin: String(room.humidityMin),
-  humidityMax: String(room.humidityMax),
-});
+const PAGE_SIZE = 10;
 
 const Rooms: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { rooms, addRoom, updateRoom, removeRoom } = useRooms();
-  const [fields, setFields] = useState(initialFields);
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<
-    Partial<Record<keyof typeof initialFields, string>>
-  >({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: rooms = [], isLoading, isError, error } = useRooms();
+  const deleteRoom = useDeleteRoom();
 
   const formParam = searchParams.get("sala");
   const isFormOpen = formParam !== null;
@@ -53,31 +22,6 @@ const Rooms: React.FC = () => {
 
   const pageParam = Number(searchParams.get("page"));
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
-
-  useEffect(() => {
-    if (!formParam) return;
-
-    if (formParam === "nova") {
-      setFields(initialFields);
-    } else {
-      const room = rooms.find((current) => current.id === formParam);
-      if (room) {
-        setFields(roomToFields(room));
-      }
-    }
-
-    setError("");
-    setFieldErrors({});
-  }, [formParam]);
-
-  const updateField = (key: keyof typeof initialFields, value: string) => {
-    setFields((current) => ({ ...current, [key]: value }));
-    setFieldErrors((current) => {
-      if (!current[key]) return current;
-      const { [key]: _removed, ...rest } = current;
-      return rest;
-    });
-  };
 
   const openForm = (room?: Room) => {
     const next = new URLSearchParams(searchParams);
@@ -97,218 +41,22 @@ const Rooms: React.FC = () => {
     setSearchParams(next);
   };
 
-  const handleDelete = (id: string) => {
-    removeRoom(id);
+  const handleSaved = (created: boolean) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("sala");
+    if (created) {
+      // A sala recém-criada já está no cache: vai para a última página.
+      next.set("page", String(Math.ceil((rooms.length + 1) / PAGE_SIZE)));
+    }
+    setSearchParams(next);
   };
-
-  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const { name, tempMin, tempMax, humidityMin, humidityMax } = fields;
-    const nextFieldErrors: Partial<Record<keyof typeof initialFields, string>> =
-      {};
-
-    if (!name.trim()) {
-      nextFieldErrors.name = "Preencha o nome da sala.";
-    }
-    if (!tempMin.trim()) {
-      nextFieldErrors.tempMin = "Campo obrigatório.";
-    }
-    if (!tempMax.trim()) {
-      nextFieldErrors.tempMax = "Campo obrigatório.";
-    }
-    if (!humidityMin.trim()) {
-      nextFieldErrors.humidityMin = "Campo obrigatório.";
-    }
-    if (!humidityMax.trim()) {
-      nextFieldErrors.humidityMax = "Campo obrigatório.";
-    }
-
-    if (
-      !nextFieldErrors.tempMin &&
-      !nextFieldErrors.tempMax &&
-      Number(tempMin) >= Number(tempMax)
-    ) {
-      nextFieldErrors.tempMin = "Deve ser menor que a máxima.";
-      nextFieldErrors.tempMax = "Deve ser maior que a mínima.";
-    }
-
-    if (!nextFieldErrors.humidityMin) {
-      if (Number(humidityMin) < 0 || Number(humidityMin) > 100) {
-        nextFieldErrors.humidityMin = "Deve ficar entre 0% e 100%.";
-      }
-    }
-    if (!nextFieldErrors.humidityMax) {
-      if (Number(humidityMax) < 0 || Number(humidityMax) > 100) {
-        nextFieldErrors.humidityMax = "Deve ficar entre 0% e 100%.";
-      }
-    }
-
-    if (
-      !nextFieldErrors.humidityMin &&
-      !nextFieldErrors.humidityMax &&
-      Number(humidityMin) >= Number(humidityMax)
-    ) {
-      nextFieldErrors.humidityMin = "Deve ser menor que a máxima.";
-      nextFieldErrors.humidityMax = "Deve ser maior que a mínima.";
-    }
-
-    setFieldErrors(nextFieldErrors);
-
-    if (Object.keys(nextFieldErrors).length > 0) {
-      setError("Corrija os campos destacados abaixo.");
-      return;
-    }
-
-    setError("");
-    setIsSubmitting(true);
-
-    const roomData = {
-      name: fields.name.trim(),
-      description: fields.description.trim(),
-      tempMin: Number(tempMin),
-      tempMax: Number(tempMax),
-      humidityMin: Number(humidityMin),
-      humidityMax: Number(humidityMax),
-    };
-
-    const baseUrl = "https://localhost:6767";
-    console.log(editingRoomId);
-
-    if (editingRoomId != null) {
-      await axios.put(`${baseUrl}/api/rooms/${editingRoomId}`, roomData)
-        .then((res) => {
-          // handle response
-        })
-        .catch((err) => {
-          //handle error
-        });
-    } else {
-      await axios.post(baseUrl + "/api/rooms/", roomData)
-        .then((res) => {
-          // handle response
-        })
-        .catch((err) => {
-          //handle error
-        });
-    }
-
-    setTimeout(() => {
-      const newTotal = editingRoomId ? rooms.length : rooms.length + 1;
-
-      if (editingRoomId) {
-        updateRoom(editingRoomId, roomData);
-      } else {
-        addRoom(roomData);
-      }
-
-      setIsSubmitting(false);
-
-      const next = new URLSearchParams(searchParams);
-      next.delete("sala");
-      if (!editingRoomId) {
-        next.set("page", String(Math.ceil(newTotal / 10)));
-      }
-      setSearchParams(next);
-    }, 500);
-  };
-
-  const formFields: RecordFormField[] = [
-    {
-      id: "name",
-      label: "Nome da sala",
-      icon: DoorOpen,
-      placeholder: "Ex: Reserva Técnica 1",
-      value: fields.name,
-      onChange: (value) => updateField("name", value),
-      required: true,
-      error: fieldErrors.name,
-    },
-    {
-      id: "description",
-      label: "Descrição",
-      type: "textarea",
-      placeholder: "Observações sobre o acervo guardado neste espaço",
-      value: fields.description,
-      onChange: (value) => updateField("description", value),
-    },
-    {
-      groupLabel: "Faixa de temperatura (°C)",
-      fields: [
-        {
-          id: "tempMin",
-          type: "number",
-          step: "0.1",
-          icon: Thermometer,
-          placeholder: "Mínima",
-          value: fields.tempMin,
-          onChange: (value) => updateField("tempMin", value),
-          required: true,
-          error: fieldErrors.tempMin,
-        },
-        {
-          id: "tempMax",
-          type: "number",
-          step: "0.1",
-          icon: Thermometer,
-          placeholder: "Máxima",
-          value: fields.tempMax,
-          onChange: (value) => updateField("tempMax", value),
-          required: true,
-          error: fieldErrors.tempMax,
-        },
-      ],
-    },
-    {
-      groupLabel: "Faixa de umidade relativa (%)",
-      fields: [
-        {
-          id: "humidityMin",
-          type: "number",
-          step: "1",
-          min: "0",
-          max: "100",
-          icon: Droplets,
-          placeholder: "Mínima",
-          value: fields.humidityMin,
-          onChange: (value) => updateField("humidityMin", value),
-          required: true,
-          error: fieldErrors.humidityMin,
-        },
-        {
-          id: "humidityMax",
-          type: "number",
-          step: "1",
-          min: "0",
-          max: "100",
-          icon: Droplets,
-          placeholder: "Máxima",
-          value: fields.humidityMax,
-          onChange: (value) => updateField("humidityMax", value),
-          required: true,
-          error: fieldErrors.humidityMax,
-        },
-      ],
-    },
-  ];
 
   if (isFormOpen) {
     return (
-      <RecordForm
-        title={editingRoomId ? "Editar sala" : "Cadastro de sala"}
-        subtitle={
-          editingRoomId
-            ? "Atualize as informações e os limites de segurança desta sala."
-            : "Adicione um novo ponto de monitoramento e defina os limites de temperatura e umidade que disparam alertas."
-        }
-        fields={formFields}
-        error={error}
-        isSubmitting={isSubmitting}
-        submitLabel={editingRoomId ? "Salvar alterações" : "Salvar sala"}
-        submittingLabel="Salvando..."
-        submitIcon={<Save size={16} strokeWidth={1.8} />}
-        onSubmit={handleSubmit}
+      <RoomForm
+        roomId={editingRoomId}
         onCancel={closeForm}
+        onSaved={handleSaved}
       />
     );
   }
@@ -338,7 +86,7 @@ const Rooms: React.FC = () => {
       width: "15%",
       render: (room) => (
         <span className="text-ink-soft">
-          {room.tempMin}°C – {room.tempMax}°C
+          {formatRange(room.tempMin, room.tempMax, "°C")}
         </span>
       ),
     },
@@ -348,7 +96,7 @@ const Rooms: React.FC = () => {
       width: "15%",
       render: (room) => (
         <span className="text-ink-soft">
-          {room.humidityMin}% – {room.humidityMax}%
+          {formatRange(room.humidityMin, room.humidityMax, "%")}
         </span>
       ),
     },
@@ -368,7 +116,7 @@ const Rooms: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => handleDelete(room.id)}
+            onClick={() => deleteRoom.mutate(room.id)}
             aria-label={`Remover ${room.name}`}
             className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-danger-soft hover:text-danger"
           >
@@ -397,6 +145,14 @@ const Rooms: React.FC = () => {
         </Button>
       </div>
 
+      {/* Falha só aparece quando não há nada em tela; revalidações em
+          segundo plano não interrompem a listagem já carregada. */}
+      {isError && rooms.length === 0 && (
+        <p className="mt-6 rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">
+          {error.message}
+        </p>
+      )}
+
       <div className="mt-6">
         <DataTable
           columns={columns}
@@ -404,6 +160,8 @@ const Rooms: React.FC = () => {
           getRowKey={(room) => room.id}
           page={page}
           onPageChange={goToPage}
+          pageSize={PAGE_SIZE}
+          isLoading={isLoading}
           emptyMessage="Nenhuma sala cadastrada ainda."
         />
       </div>
