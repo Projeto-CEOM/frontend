@@ -28,20 +28,19 @@ npx tsc --noEmit   # typecheck isolado
 src/
   api/            todo acesso a dados (ver "Regra 1")
     client.ts         instância axios + interceptors + ApiError
-    config.ts         VITE_API_URL, USE_MOCK_API
+    config.ts         VITE_API_URL
     keys.ts           chaves de cache do react-query
     queryClient.ts    QueryClient + toasts globais de mutation
     types.ts          tipos de domínio (Room, Sensor, AuthUser…)
     auth.ts rooms.ts sensors.ts    helpers por domínio
-    mock/             backend em memória (seeds + CRUD)
     queries/          hooks de react-query (createCrudQueries + useRooms…)
     utils/handleConfig.ts
   store/          redux: slices auth, layout, toast + persistência
-  hooks/          hooks de composição (UseAuth, UseToast, UseClickOutside)
+  hooks/          hooks de composição (UseAuth, UsePermissions, UseToast…)
   components/common/  Input, Select, Button, DataTable, RecordForm, Toaster
   layouts/        AppShell, Sidebar
   pages/          uma pasta por tela: index.tsx (lista) + Form.tsx + schema.ts
-  utils/          cn, validation (locale pt-BR do yup)
+  utils/          cn, format, permissions (bitmap), validation (yup pt-BR)
 ```
 
 Convenções: imports por alias `@/…`; pasta em PascalCase com `index.tsx`;
@@ -57,46 +56,36 @@ tratamento de erro.
 Erros viram `ApiError` com mensagem já em pt-BR (`error.message` pode ir direto
 para a tela). 401 encerra a sessão automaticamente.
 
-### Rotas e flags de mock
+### Rotas
 
-Endpoints usados pelos helpers (coleção com barra final, item sem — mesmo
-formato da integração anterior):
+Coleção com barra final, item sem. Note que salas é plural e sensor é singular —
+é assim que o backend expõe:
 
-| Operação        | Requisição                  |
-| --------------- | --------------------------- |
-| listar          | `GET /api/rooms/`           |
-| detalhe         | `GET /api/rooms/{id}`       |
-| criar           | `POST /api/rooms/`          |
-| atualizar       | `PUT /api/rooms/{id}`       |
-| remover         | `DELETE /api/rooms/{id}`    |
+| Operação  | Salas                    | Sensores                  |
+| --------- | ------------------------ | ------------------------- |
+| listar    | `GET /api/rooms/`        | `GET /api/sensor/`        |
+| detalhe   | `GET /api/rooms/{id}`    | `GET /api/sensor/{id}`    |
+| criar     | `POST /api/rooms/`       | `POST /api/sensor/`       |
+| atualizar | `PUT /api/rooms/{id}`    | `PUT /api/sensor/{id}`    |
+| remover   | `DELETE /api/rooms/{id}` | `DELETE /api/sensor/{id}` |
 
-Mesmo desenho para `/api/sensors/`. Se o backend usar outro formato, mude só as
-constantes `COLLECTION`/`item` em `src/api/<recurso>.ts`.
+Login: `POST /api/auth/login` devolve `{ user, token }`.
 
-O mock é por recurso (`src/api/config.ts`), com o padrão acompanhando o que o
-backend já expõe hoje:
-
-| Flag                     | Padrão   | Motivo                              |
-| ------------------------ | -------- | ----------------------------------- |
-| `VITE_USE_MOCK_ROOMS`    | API real | `/api/rooms/` implementado          |
-| `VITE_USE_MOCK_SENSORS`  | mock     | `/api/sensors/` ainda responde 404   |
-| `VITE_USE_MOCK_AUTH`     | mock     | `/api/auth/login` ainda responde 404 |
-
-`VITE_USE_MOCK_API` serve de override geral quando os flags específicos não
-estão definidos. Conforme o backend evoluir, mude o padrão em `config.ts` (não
-espalhe condicional pelas telas).
+Se o backend mudar o formato, ajuste só as constantes `COLLECTION`/`item` em
+`src/api/<recurso>.ts`. **Não existe camada de mock** — toda tela fala com a API
+real; a única configuração é `VITE_API_URL`.
 
 > O Vite lê o `.env` só na inicialização: **reinicie o `yarn dev`** depois de
 > mudar qualquer variável.
 
 ## Regra 2 — Estado: redux vs. react-query
 
-| Tipo de estado                    | Onde mora            |
-| --------------------------------- | -------------------- |
-| Sessão/usuário/token              | `store/slices/authSlice`  |
+| Tipo de estado                    | Onde mora                  |
+| --------------------------------- | -------------------------- |
+| Sessão/usuário/token/papel        | `store/slices/authSlice`   |
 | Layout (sidebar, drawer mobile)   | `store/slices/layoutSlice` |
-| Notificações                      | `store/slices/toastSlice` |
-| Qualquer dado vindo da API        | react-query (nunca redux) |
+| Notificações                      | `store/slices/toastSlice`  |
+| Qualquer dado vindo da API        | react-query (nunca redux)  |
 
 Não use React Context para estado — os antigos `AuthContext`/`RoomsContext`
 foram removidos. Consuma a store com `useAppSelector`/`useAppDispatch`
@@ -180,10 +169,54 @@ const form = useForm<RoomFormValues>({
 <RecordForm form={form} fields={fields} onSubmit={handleSubmit} … />
 ```
 
+## Regra 5 — Permissões por papel (bitmap estilo `chmod`)
+
+Cada permissão é um bit (`src/utils/permissions`):
+
+| bit | valor | permissão |
+| --- | ----- | --------- |
+| 4   | 16    | `users`   |
+| 3   | 8     | `create`  |
+| 2   | 4     | `update`  |
+| 1   | 2     | `delete`  |
+| 0   | 1     | `read`    |
+
+O papel vira a soma dos bits, sobrescrevível pelo `.env` (`VITE_ROLE_ADMIN`…,
+tabela completa no `.env.example`):
+
+| papel  | máscara | leitura |
+| ------ | ------- | ------- |
+| admin  | 31      | `Ucudr` |
+| owner  | 31      | `Ucudr` |
+| editor | 15      | `-cudr` |
+| viewer | 1       | `----r` |
+
+O papel chega na sessão (`AuthUser.role`) e a máscara é **derivada por selector**
+no `authSlice` — não guarde a máscara na store, ela sai sempre do papel. Papel
+desconhecido cai no `VITE_DEFAULT_ROLE` (padrão `viewer`); sem sessão a máscara
+é `0`.
+
+Nas telas, use o hook `usePermissions` (`@/hooks/UsePermissions`):
+
+```tsx
+const { can, canAny, role, label } = usePermissions();
+
+{can("c") && <Button onClick={openForm}>Nova sala</Button>}
+{can("u", "d") && <RowActions />}     // exige as duas
+{canAny("u", "d") && <RowActions />}  // basta uma
+```
+
+Chaves aceitas: `users`, `c`, `r`, `u`, `d` (ou os nomes por extenso).
+`usePermission("d")` é o atalho para um teste único.
+
+> O papel vem do backend em `AuthUser.role` (resposta do login). Se a resposta
+> não trouxer `role`, a sessão cai no `VITE_DEFAULT_ROLE` — `viewer`, ou seja,
+> somente leitura.
+
 ## Receita: novo recurso CRUD
 
 1. Tipos em `src/api/types.ts`.
-2. Helper `src/api/<recurso>.ts` (HTTP + escolha do mock) e mock em `src/api/mock`.
+2. Helper `src/api/<recurso>.ts` com as rotas do recurso.
 3. Chaves em `src/api/keys.ts`.
 4. Hooks em `src/api/queries/use<Recurso>.ts` via `createCrudQueries`.
 5. `pages/<Recurso>/schema.ts` (yup), `Form.tsx` (RHF + `RecordForm`) e
@@ -194,11 +227,12 @@ const form = useForm<RoomFormValues>({
 
 - Telas de Canais e Relatórios existem no menu, mas ainda não têm rota/página.
 - Dashboard é um placeholder ("TO DO").
-- **Salas na API real não guardam as faixas**: o backend devolve apenas
-  `id`, `name`, `description`, `createdAt`. O frontend envia `tempMin`,
-  `tempMax`, `humidityMin` e `humidityMax` no POST/PUT, mas eles não voltam na
-  leitura — por isso as faixas são opcionais em `Room` (`src/api/types.ts`) e a
-  tabela mostra "—". Quando o backend persistir esses campos, nada muda no
-  frontend.
-- `/api/sensors/` e `/api/auth/login` ainda não existem (404) — daí o mock
-  padrão desses dois recursos.
+- **Faixas de temperatura/umidade das salas**: em agosto/2026 o `GET /api/rooms/`
+  devolvia só `id`, `name`, `description` e `createdAt`. O frontend envia
+  `tempMin`, `tempMax`, `humidityMin` e `humidityMax` no POST/PUT, e por isso
+  elas são opcionais em `Room` (`src/api/types.ts`) — a tabela mostra "—" quando
+  não voltam. Se o backend já persiste, nada muda no frontend.
+- O papel do usuário depende de o login devolver `role`; sem isso todo mundo
+  entra como `viewer` (somente leitura).
+- As permissões existem no store e no hook, mas ainda **não escondem botões nas
+  telas** — o wiring de `can("c")`/`can("d")` em Salas e Sensores está pendente.

@@ -1,7 +1,11 @@
+import type { Role } from "@/utils/permissions";
+
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
+  /** Define a máscara de permissões da sessão (ver `@/utils/permissions`). */
+  role?: Role;
 };
 
 export type AuthSession = {
@@ -51,7 +55,7 @@ export type Sensor = {
   createdAt?: string;
 } & Partial<EnvironmentLimits>;
 
-/** Contrato compartilhado entre a implementação HTTP e a mock de cada domínio. */
+/** Contrato CRUD compartilhado pelos helpers de domínio. */
 export type CrudApi<TEntity, TPayload> = {
   list: () => Promise<TEntity[]>;
   get: (id: string) => Promise<TEntity>;
