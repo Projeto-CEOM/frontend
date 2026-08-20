@@ -44,8 +44,7 @@ export const loadPersistedState = (): {
   const layout = read<Pick<LayoutState, "sidebarCollapsed">>(LAYOUT_KEY);
 
   return {
-    auth:
-      auth?.user && auth.token ? auth : { user: null, token: null },
+    auth: auth?.user && auth.token ? auth : { user: null, token: null },
     layout: {
       sidebarCollapsed: Boolean(layout?.sidebarCollapsed),
       mobileNavOpen: false,
@@ -62,8 +61,11 @@ persistenceListener.startListening({
 
     setAuthToken(auth.token);
 
-    if (auth.token) {
-      write(AUTH_KEY, auth);
+    if (auth.token && auth.user) {
+      write(AUTH_KEY, {
+        ...auth,
+        user: { ...auth.user, role: import.meta.env.VITE_DEFAULT_ROLE },
+      });
     } else {
       localStorage.removeItem(AUTH_KEY);
     }
