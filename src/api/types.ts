@@ -14,7 +14,7 @@ export type AuthSession = {
 };
 
 export type LoginPayload = {
-  email: string;
+  account: string;
   password: string;
   rememberMe?: boolean;
 };

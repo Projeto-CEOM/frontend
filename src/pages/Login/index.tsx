@@ -17,7 +17,7 @@ const Login: React.FC = () => {
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: yupResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: false },
+    defaultValues: { account: "", password: "", rememberMe: false },
   });
 
   const onSubmit = handleSubmit(async (values) => {
@@ -58,14 +58,14 @@ const Login: React.FC = () => {
 
           <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit} noValidate>
             <Input
-              id="email"
-              type="email"
+              id="account"
+              type="account"
               label="Usuário"
               icon={Mail}
               autoComplete="username"
               placeholder="user@domain"
-              error={errors.email?.message}
-              {...register("email")}
+              error={errors.account?.message}
+              {...register("account")}
             />
 
             <Input
