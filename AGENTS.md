@@ -71,6 +71,18 @@ Coleção com barra final, item sem. Note que salas é plural e sensor é singul
 
 Login: `POST /api/auth/login` devolve `{ user, token }`.
 
+**As listagens são paginadas pelo servidor.** Aceitam `page`, `pageSize`,
+`sortBy` e `sortOrder` na query string e devolvem um envelope — as demais rotas
+trabalham com a entidade direta:
+
+```jsonc
+{
+  "data": [ { "id": "14", "name": "teste", /* … */ } ],
+  "meta": { "page": 1, "pageSize": 50, "total": 2, "totalPages": 1,
+            "sortBy": "name", "sortOrder": "desc" }
+}
+```
+
 Se o backend mudar o formato, ajuste só as constantes `COLLECTION`/`item` em
 `src/api/<recurso>.ts`. **Não existe camada de mock** — toda tela fala com a API
 real; a única configuração é `VITE_API_URL`.
@@ -120,11 +132,29 @@ não espere a resposta para navegar.
 
 Leituras (`useQuery`) mostram erro inline na tela; só mutations disparam toast.
 
-### Listagens não piscam
+### Paginação e listagens que não piscam
 
-`DataTable` recebe `isLoading` e mostra placeholders (skeleton) **apenas na
-primeira carga**, quando ainda não há nada em cache — é exatamente o que o
-`isLoading` do react-query v5 significa (`isPending && isFetching`).
+A página vem do servidor: `useList({ page, pageSize })` vira uma entrada de
+cache por combinação de parâmetros (`["rooms","list",{page,pageSize}]`), e a
+tela repassa o `meta` para a tabela — `DataTable` **não fatia nada**, só
+renderiza o que recebeu:
+
+```tsx
+const { data, isLoading } = useRooms({ page, pageSize: PAGE_SIZE });
+
+<DataTable data={data?.data ?? []} pagination={data?.meta}
+           onPageChange={goToPage} isLoading={isLoading} … />
+```
+
+Como cada página é uma chave própria, as escritas otimistas percorrem **todas**
+as páginas em cache (`setQueriesData` sobre o prefixo `keys.lists()`) e o
+rollback restaura o snapshot inteiro. Por isso `keys` tem `lists()` (prefixo,
+para filtros) além de `list(params)` (página concreta).
+
+Trocar de página usa `placeholderData: keepPreviousData`, então as linhas
+antigas ficam na tela até a próxima chegar. O skeleton só aparece na **primeira
+carga**, quando não há nada em cache — é o que o `isLoading` do react-query v5
+significa (`isPending && isFetching`).
 
 Consequências que devem ser preservadas em qualquer tela nova:
 
@@ -132,7 +162,9 @@ Consequências que devem ser preservadas em qualquer tela nova:
   tela: sem skeleton, sem "carregando", sem lista vazia piscando;
 - a linha otimista já conta como dado, então o placeholder não volta;
 - o erro da listagem só aparece quando não há nada para mostrar
-  (`isError && data.length === 0`) — falha de revalidação não derruba a tela.
+  (`isError && data.length === 0`) — falha de revalidação não derruba a tela;
+- a tela volta para a última página válida quando a atual deixa de existir
+  (ex.: remover o único item da última página).
 
 ## Regra 4 — Formulários: React Hook Form + Yup em pt-BR
 
