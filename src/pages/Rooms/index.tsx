@@ -13,7 +13,15 @@ const PAGE_SIZE = 10;
 
 const Rooms: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: rooms = [], isLoading, isError, error } = useRooms();
+  const pageParam = Number(searchParams.get("page"));
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+
+  const { data, isLoading, isError, error } = useRooms({
+    page,
+    pageSize: PAGE_SIZE,
+  });
+  const rooms = data?.data ?? [];
+  const meta = data?.meta;
   const deleteRoom = useDeleteRoom();
   const { can } = usePermissions();
 
@@ -21,9 +29,6 @@ const Rooms: React.FC = () => {
   const isFormOpen = formParam !== null;
   const editingRoomId = formParam && formParam !== "nova" ? formParam : null;
   const formAllowed = isFormOpen && (editingRoomId ? can("u") : can("c"));
-
-  const pageParam = Number(searchParams.get("page"));
-  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
   const openForm = (room?: Room) => {
     const next = new URLSearchParams(searchParams);
@@ -43,14 +48,25 @@ const Rooms: React.FC = () => {
     setSearchParams(next);
   };
 
-  const handleSaved = (created: boolean) => {
-    const next = new URLSearchParams(searchParams);
-    next.delete("sala");
-    if (created) {
-      next.set("page", String(Math.ceil((rooms.length + 1) / PAGE_SIZE)));
+  // A página atual pode deixar de existir (ex.: remover o último item da
+  // última página) — nesse caso o servidor devolve vazio e voltamos ao fim.
+  const totalPages = meta?.totalPages;
+  useEffect(() => {
+    if (totalPages !== undefined && totalPages > 0 && page > totalPages) {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.set("page", String(totalPages));
+          return next;
+        },
+        { replace: true },
+      );
     }
-    setSearchParams(next);
-  };
+  }, [totalPages, page, setSearchParams]);
+
+  // A linha entra otimista na página aberta; onde ela cai de fato depende da
+  // ordenação do servidor, então não forçamos navegação depois de salvar.
+  const handleSaved = closeForm;
 
   useEffect(() => {
     if (isFormOpen && !formAllowed) closeForm();
@@ -175,10 +191,10 @@ const Rooms: React.FC = () => {
           columns={columns}
           data={rooms}
           getRowKey={(room) => room.id}
-          page={page}
           onPageChange={goToPage}
-          pageSize={PAGE_SIZE}
           isLoading={isLoading}
+          pagination={meta}
+          skeletonRows={Math.min(PAGE_SIZE, 5)}
           emptyMessage="Nenhuma sala cadastrada ainda."
         />
       </div>

@@ -55,9 +55,40 @@ export type Sensor = {
   createdAt?: string;
 } & Partial<EnvironmentLimits>;
 
-/** Contrato CRUD compartilhado pelos helpers de domínio. */
+export type SortOrder = "asc" | "desc";
+
+/** Bloco `meta` que a API devolve junto de toda listagem. */
+export type ListMeta = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+};
+
+/** Envelope das listagens: `{ data, meta }`. */
+export type Paginated<TEntity> = {
+  data: TEntity[];
+  meta: ListMeta;
+};
+
+/** Query string aceita pelas listagens. */
+export type ListParams = {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: SortOrder;
+};
+
+/**
+ * Contrato CRUD compartilhado pelos helpers de domínio.
+ *
+ * A paginação é do servidor: `list` recebe os parâmetros e devolve o envelope
+ * com `meta`. As demais operações trabalham com a entidade direto.
+ */
 export type CrudApi<TEntity, TPayload> = {
-  list: () => Promise<TEntity[]>;
+  list: (params?: ListParams) => Promise<Paginated<TEntity>>;
   get: (id: string) => Promise<TEntity>;
   create: (payload: TPayload) => Promise<TEntity>;
   update: (id: string, payload: TPayload) => Promise<TEntity>;

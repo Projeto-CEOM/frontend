@@ -16,7 +16,7 @@ import {
 type RoomFormProps = {
   roomId: string | null;
   onCancel: () => void;
-  onSaved: (created: boolean) => void;
+  onSaved: () => void;
 };
 
 const RoomForm: React.FC<RoomFormProps> = ({ roomId, onCancel, onSaved }) => {
@@ -44,7 +44,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ roomId, onCancel, onSaved }) => {
       createRoom.mutate(values);
     }
 
-    onSaved(!roomId);
+    onSaved();
   };
 
   const fields: RecordFormField<RoomFormValues>[] = [

@@ -12,10 +12,24 @@ import SensorForm from "./SensorForm";
 
 const PAGE_SIZE = 10;
 
+/** O select de sala precisa de todas as salas, não só da primeira página. */
+const ROOM_LOOKUP_PARAMS = { page: 1, pageSize: 200 };
+
 const Sensors: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: sensors = [], isLoading, isError, error } = useSensors();
-  const { data: rooms = [] } = useRooms();
+  const pageParam = Number(searchParams.get("page"));
+  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+
+  const { data, isLoading, isError, error } = useSensors({
+    page,
+    pageSize: PAGE_SIZE,
+  });
+  const sensors = data?.data ?? [];
+  const meta = data?.meta;
+
+  // Só para resolver o nome da sala de cada linha.
+  const { data: roomsPage } = useRooms(ROOM_LOOKUP_PARAMS);
+  const rooms = roomsPage?.data ?? [];
   const deleteSensor = useDeleteSensor();
   const { can } = usePermissions();
 
@@ -23,9 +37,6 @@ const Sensors: React.FC = () => {
   const isFormOpen = formParam !== null;
   const editingSensorId = formParam && formParam !== "novo" ? formParam : null;
   const formAllowed = isFormOpen && (editingSensorId ? can("u") : can("c"));
-
-  const pageParam = Number(searchParams.get("page"));
-  const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
   const openForm = (sensor?: Sensor) => {
     const next = new URLSearchParams(searchParams);
@@ -45,14 +56,23 @@ const Sensors: React.FC = () => {
     setSearchParams(next);
   };
 
-  const handleSaved = (created: boolean) => {
-    const next = new URLSearchParams(searchParams);
-    next.delete("sensor");
-    if (created) {
-      next.set("page", String(Math.ceil((sensors.length + 1) / PAGE_SIZE)));
+  // A página atual pode deixar de existir (ex.: remover o último item da
+  // última página) — nesse caso o servidor devolve vazio e voltamos ao fim.
+  const totalPages = meta?.totalPages;
+  useEffect(() => {
+    if (totalPages !== undefined && totalPages > 0 && page > totalPages) {
+      setSearchParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.set("page", String(totalPages));
+          return next;
+        },
+        { replace: true },
+      );
     }
-    setSearchParams(next);
-  };
+  }, [totalPages, page, setSearchParams]);
+
+  const handleSaved = closeForm;
 
   useEffect(() => {
     if (isFormOpen && !formAllowed) closeForm();
@@ -176,10 +196,10 @@ const Sensors: React.FC = () => {
           columns={columns}
           data={sensors}
           getRowKey={(sensor) => sensor.id}
-          page={page}
           onPageChange={goToPage}
-          pageSize={PAGE_SIZE}
+          pagination={meta}
           isLoading={isLoading}
+          skeletonRows={Math.min(PAGE_SIZE, 5)}
           emptyMessage="Nenhum sensor cadastrado ainda."
         />
       </div>

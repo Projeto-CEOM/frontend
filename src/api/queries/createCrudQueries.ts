@@ -1,15 +1,20 @@
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
+  type QueryClient,
   type QueryKey,
 } from "@tanstack/react-query";
 import { nanoid } from "@reduxjs/toolkit";
-import type { CrudApi } from "../types";
+import type { CrudApi, ListParams, Paginated } from "../types";
 
 type EntityKeys = {
   all: QueryKey;
-  list: () => QueryKey;
+  /** Prefixo de todas as páginas — usado em filtros. */
+  lists: () => QueryKey;
+  /** Página concreta. */
+  list: (params?: ListParams) => QueryKey;
   detail: (id: string) => QueryKey;
 };
 
@@ -28,14 +33,20 @@ type CreateCrudQueriesOptions<TEntity, TPayload> = {
   relatedKeys?: QueryKey[];
 };
 
+/** Snapshot de todas as páginas em cache, para rollback. */
+type ListSnapshot<TEntity> = [QueryKey, Paginated<TEntity> | undefined][];
+
 /**
  * Fábrica de hooks CRUD do react-query com atualização otimista.
  *
- * Toda mutation assume sucesso: o cache é atualizado na hora (`onMutate`),
- * o estado anterior é restaurado se a API falhar (`onError`) e a lista é
- * revalidada ao final (`onSettled`). O toast — de sucesso pelo `meta` e de
- * erro pela mensagem do `ApiError` — sai do `mutationCache` global em
- * `src/api/queryClient.ts`.
+ * A listagem é paginada **pelo servidor**: `useList(params)` manda
+ * `page`/`pageSize`/`sortBy`/`sortOrder` e recebe `{ data, meta }`. Cada
+ * combinação de parâmetros é uma entrada de cache própria, então as escritas
+ * otimistas percorrem todas as páginas em cache (`setQueriesData`) e o rollback
+ * restaura o snapshot inteiro.
+ *
+ * O toast — sucesso pelo `meta` da mutation e erro pela mensagem do `ApiError` —
+ * sai do `mutationCache` global em `src/api/queryClient.ts`.
  */
 export const createCrudQueries = <
   TEntity extends { id: string },
@@ -46,27 +57,66 @@ export const createCrudQueries = <
   messages,
   relatedKeys = [],
 }: CreateCrudQueriesOptions<TEntity, TPayload>) => {
-  const useList = () =>
+  const listFilter = () => ({ queryKey: keys.lists() });
+
+  /** Aplica a mesma transformação em todas as páginas já carregadas. */
+  const patchLists = (
+    queryClient: QueryClient,
+    patch: (page: Paginated<TEntity>) => Paginated<TEntity>,
+  ) =>
+    queryClient.setQueriesData<Paginated<TEntity>>(listFilter(), (page) =>
+      page ? patch(page) : page,
+    );
+
+  const snapshotLists = (queryClient: QueryClient): ListSnapshot<TEntity> =>
+    queryClient.getQueriesData<Paginated<TEntity>>(listFilter());
+
+  const restoreLists = (
+    queryClient: QueryClient,
+    snapshot: ListSnapshot<TEntity> | undefined,
+  ) => {
+    snapshot?.forEach(([queryKey, page]) => {
+      queryClient.setQueryData(queryKey, page);
+    });
+  };
+
+  const useList = (params?: ListParams) =>
     useQuery({
-      queryKey: keys.list(),
-      queryFn: api.list,
+      queryKey: keys.list(params),
+      queryFn: () => api.list(params),
+      // Trocar de página mantém as linhas anteriores enquanto a próxima chega:
+      // sem skeleton, sem tabela vazia piscando.
+      placeholderData: keepPreviousData,
     });
 
   const useDetail = (id: string | null) => {
     const queryClient = useQueryClient();
 
+    /** Procura a entidade nas páginas já carregadas. */
+    const findInLists = () => {
+      if (!id) return undefined;
+
+      for (const [queryKey, page] of snapshotLists(queryClient)) {
+        const found = page?.data.find((item) => item.id === id);
+        if (found) {
+          return {
+            found,
+            updatedAt: queryClient.getQueryState(queryKey)?.dataUpdatedAt,
+          };
+        }
+      }
+
+      return undefined;
+    };
+
     return useQuery({
       queryKey: keys.detail(id ?? ""),
       queryFn: () => api.get(id as string),
       enabled: Boolean(id),
-      // Aproveita o item já presente na lista para abrir o formulário
-      // preenchido; a idade do dado vem da própria lista.
-      initialData: () =>
-        queryClient
-          .getQueryData<TEntity[]>(keys.list())
-          ?.find((item) => item.id === id),
-      initialDataUpdatedAt: () =>
-        queryClient.getQueryState(keys.list())?.dataUpdatedAt,
+      // Abre o formulário já preenchido com o item da lista; a idade do dado
+      // vem da própria listagem, então a revalidação acontece na hora certa.
+      initialData: () => findInLists()?.found,
+      initialDataUpdatedAt: () => findInLists()?.updatedAt,
     });
   };
 
@@ -89,30 +139,23 @@ export const createCrudQueries = <
       mutationFn: (payload: TPayload) => api.create(payload),
       meta: { successMessage: messages.created },
       onMutate: async (payload) => {
-        await queryClient.cancelQueries({ queryKey: keys.all });
+        await queryClient.cancelQueries(listFilter());
 
-        const previousList = queryClient.getQueryData<TEntity[]>(keys.list());
+        const snapshot = snapshotLists(queryClient);
         const optimisticId = `temp-${nanoid()}`;
+        const optimistic = { ...payload, id: optimisticId } as unknown as TEntity;
 
-        queryClient.setQueryData<TEntity[]>(keys.list(), (current) => [
-          ...(current ?? []),
-          { ...payload, id: optimisticId } as unknown as TEntity,
-        ]);
+        // A ordenação é do servidor, então não dá para saber a posição real:
+        // a linha entra no fim da página aberta e o `onSettled` acerta tudo.
+        patchLists(queryClient, (page) => ({
+          data: [...page.data, optimistic],
+          meta: { ...page.meta, total: page.meta.total + 1 },
+        }));
 
-        return { previousList, optimisticId };
+        return { snapshot };
       },
-      onError: (_error, _payload, context) => {
-        if (!context) return;
-
-        queryClient.setQueryData<TEntity[]>(
-          keys.list(),
-          context.previousList ??
-            ((current) =>
-              (current ?? []).filter(
-                (item) => item.id !== context.optimisticId,
-              )),
-        );
-      },
+      onError: (_error, _payload, context) =>
+        restoreLists(queryClient, context?.snapshot),
       onSettled: () => invalidateAll(),
     });
   };
@@ -128,16 +171,17 @@ export const createCrudQueries = <
       onMutate: async ({ id, payload }) => {
         await queryClient.cancelQueries({ queryKey: keys.all });
 
-        const previousList = queryClient.getQueryData<TEntity[]>(keys.list());
+        const snapshot = snapshotLists(queryClient);
         const previousDetail = queryClient.getQueryData<TEntity>(
           keys.detail(id),
         );
 
-        queryClient.setQueryData<TEntity[]>(keys.list(), (current) =>
-          (current ?? []).map((item) =>
+        patchLists(queryClient, (page) => ({
+          ...page,
+          data: page.data.map((item) =>
             item.id === id ? { ...item, ...payload } : item,
           ),
-        );
+        }));
 
         if (previousDetail) {
           queryClient.setQueryData<TEntity>(keys.detail(id), {
@@ -146,15 +190,12 @@ export const createCrudQueries = <
           });
         }
 
-        return { previousList, previousDetail };
+        return { snapshot, previousDetail };
       },
       onError: (_error, { id }, context) => {
-        if (!context) return;
+        restoreLists(queryClient, context?.snapshot);
 
-        if (context.previousList) {
-          queryClient.setQueryData(keys.list(), context.previousList);
-        }
-        if (context.previousDetail) {
+        if (context?.previousDetail) {
           queryClient.setQueryData(keys.detail(id), context.previousDetail);
         }
       },
@@ -170,21 +211,24 @@ export const createCrudQueries = <
       mutationFn: (id: string) => api.remove(id),
       meta: { successMessage: messages.removed },
       onMutate: async (id) => {
-        await queryClient.cancelQueries({ queryKey: keys.all });
+        await queryClient.cancelQueries(listFilter());
 
-        const previousList = queryClient.getQueryData<TEntity[]>(keys.list());
+        const snapshot = snapshotLists(queryClient);
 
-        queryClient.setQueryData<TEntity[]>(keys.list(), (current) =>
-          (current ?? []).filter((item) => item.id !== id),
-        );
+        patchLists(queryClient, (page) => {
+          const data = page.data.filter((item) => item.id !== id);
+          const removed = page.data.length - data.length;
 
-        return { previousList };
+          return {
+            data,
+            meta: { ...page.meta, total: Math.max(0, page.meta.total - removed) },
+          };
+        });
+
+        return { snapshot };
       },
-      onError: (_error, _id, context) => {
-        if (context?.previousList) {
-          queryClient.setQueryData(keys.list(), context.previousList);
-        }
-      },
+      onError: (_error, _id, context) =>
+        restoreLists(queryClient, context?.snapshot),
       onSettled: () => invalidateAll(),
     });
   };

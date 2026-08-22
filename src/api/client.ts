@@ -17,6 +17,8 @@ export const setUnauthorizedHandler = (handler: () => void) => {
   onUnauthorized = handler;
 };
 
+type ApiErrorBody = { message?: string; error?: string };
+
 export class ApiError extends Error {
   status?: number;
   details?: unknown;
@@ -38,7 +40,7 @@ const STATUS_MESSAGES: Record<number, string> = {
   422: "Não foi possível validar os dados enviados.",
 };
 
-const toApiError = (error: AxiosError<{ message?: string }>) => {
+const toApiError = (error: AxiosError<ApiErrorBody>) => {
   const status = error.response?.status;
 
   if (!error.response) {
@@ -52,8 +54,10 @@ const toApiError = (error: AxiosError<{ message?: string }>) => {
       ? "Erro interno no servidor. Tente novamente em instantes."
       : "Não foi possível concluir a operação.";
 
+  // O backend usa `error`; `message` fica como alternativa.
   const message =
     error.response.data?.message ??
+    error.response.data?.error ??
     (status !== undefined ? STATUS_MESSAGES[status] : undefined) ??
     fallback;
 
@@ -69,7 +73,7 @@ instance.interceptors.request.use((config) => {
 
 instance.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<{ message?: string }>) => {
+  (error: AxiosError<ApiErrorBody>) => {
     if (error.response?.status === 401) {
       onUnauthorized?.();
     }

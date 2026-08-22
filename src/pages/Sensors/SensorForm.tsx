@@ -21,7 +21,7 @@ import {
 type SensorFormProps = {
   sensorId: string | null;
   onCancel: () => void;
-  onSaved: (created: boolean) => void;
+  onSaved: () => void;
 };
 
 const SensorForm: React.FC<SensorFormProps> = ({
@@ -30,7 +30,9 @@ const SensorForm: React.FC<SensorFormProps> = ({
   onSaved,
 }) => {
   const { data: sensor, isLoading } = useSensor(sensorId);
-  const { data: rooms = [] } = useRooms();
+  // Todas as salas para o select — ver ROOM_LOOKUP_PARAMS na listagem.
+  const { data: roomsPage } = useRooms({ page: 1, pageSize: 200 });
+  const rooms = roomsPage?.data ?? [];
   const createSensor = useCreateSensor();
   const updateSensor = useUpdateSensor();
 
@@ -68,7 +70,7 @@ const SensorForm: React.FC<SensorFormProps> = ({
       createSensor.mutate(values);
     }
 
-    onSaved(!sensorId);
+    onSaved();
   };
 
   const fields: RecordFormField<SensorFormValues>[] = [

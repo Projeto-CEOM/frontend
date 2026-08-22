@@ -1,5 +1,5 @@
 import api from "./client";
-import type { CrudApi, Room, RoomPayload } from "./types";
+import type { CrudApi, Paginated, Room, RoomPayload } from "./types";
 
 // A coleção mantém a barra final (`POST /api/rooms/`); os itens seguem sem ela
 // (`PUT /api/rooms/{id}`).
@@ -7,7 +7,8 @@ const COLLECTION = "/api/rooms/";
 const item = (id: string) => `/api/rooms/${id}`;
 
 export const roomsApi: CrudApi<Room, RoomPayload> = {
-  list: () => api.get<Room[]>(COLLECTION),
+  // A listagem devolve `{ data, meta }`; as demais rotas, a entidade direta.
+  list: (params) => api.get<Paginated<Room>>(COLLECTION, { params }),
   get: (id) => api.get<Room>(item(id)),
   create: (payload) => api.post<Room>(COLLECTION, payload),
   update: (id, payload) => api.put<Room>(item(id), payload),

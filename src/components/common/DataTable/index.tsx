@@ -8,17 +8,26 @@ export type DataTableColumn<T> = {
   render: (row: T) => ReactNode;
 };
 
+/** Espelha o `meta` devolvido pela API. */
+export type DataTablePagination = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
 type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
+  /** Linhas da página atual — já vêm paginadas do servidor. */
   data: T[];
   getRowKey: (row: T) => string;
-  page: number;
-  onPageChange: (page: number) => void;
-  pageSize?: number;
+  /** Ausente = lista sem paginação (renderiza tudo, sem rodapé de páginas). */
+  pagination?: DataTablePagination;
+  onPageChange?: (page: number) => void;
   emptyMessage?: string;
   /**
-   * Só na primeira carga (sem nada em cache). Revalidações e mutations
-   * otimistas mantêm a lista na tela — nunca mostram placeholder.
+   * Só na primeira carga (sem nada em cache). Revalidações, troca de página e
+   * mutations otimistas mantêm a lista na tela — nunca mostram placeholder.
    */
   isLoading?: boolean;
   skeletonRows?: number;
@@ -51,9 +60,8 @@ const DataTable = <T,>({
   columns,
   data,
   getRowKey,
-  page,
+  pagination,
   onPageChange,
-  pageSize = 10,
   emptyMessage = "Nenhum item encontrado.",
   isLoading = false,
   skeletonRows = 5,
@@ -61,10 +69,16 @@ const DataTable = <T,>({
   // Havendo dados (inclusive os otimistas), a tabela nunca volta ao placeholder.
   const showSkeleton = isLoading && data.length === 0;
 
-  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const start = (currentPage - 1) * pageSize;
-  const paginatedData = data.slice(start, start + pageSize);
+  const currentPage = pagination?.page ?? 1;
+  const totalPages = pagination?.totalPages ?? 1;
+  const total = pagination?.total ?? data.length;
+
+  // A contagem usa o tamanho real da página recebida: assim a última página
+  // (e a linha otimista recém-criada) aparecem certas.
+  const start = pagination
+    ? (currentPage - 1) * pagination.pageSize + 1
+    : 1;
+  const end = start + data.length - 1;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
@@ -105,7 +119,7 @@ const DataTable = <T,>({
             ))}
 
           {!showSkeleton &&
-            paginatedData.map((row) => (
+            data.map((row) => (
               <tr
                 key={getRowKey(row)}
                 className="border-b border-border last:border-0 hover:bg-surface-hover"
@@ -139,9 +153,7 @@ const DataTable = <T,>({
           <span className="block h-3 w-24 animate-pulse rounded-full bg-border" />
         ) : (
           <p className="text-xs text-ink-faint">
-            {data.length === 0
-              ? emptyMessage
-              : `${start + 1}–${Math.min(start + pageSize, data.length)} de ${data.length}`}
+            {data.length === 0 ? emptyMessage : `${start}–${end} de ${total}`}
           </p>
         )}
 
@@ -149,7 +161,7 @@ const DataTable = <T,>({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => onPageChange(currentPage - 1)}
+              onClick={() => onPageChange?.(currentPage - 1)}
               disabled={currentPage <= 1}
               aria-label="Página anterior"
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-ink-soft transition-colors hover:bg-surface-hover disabled:opacity-40"
@@ -161,7 +173,7 @@ const DataTable = <T,>({
             </span>
             <button
               type="button"
-              onClick={() => onPageChange(currentPage + 1)}
+              onClick={() => onPageChange?.(currentPage + 1)}
               disabled={currentPage >= totalPages}
               aria-label="Próxima página"
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-ink-soft transition-colors hover:bg-surface-hover disabled:opacity-40"
