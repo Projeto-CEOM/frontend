@@ -22,4 +22,11 @@ export const queryKeys = {
       [...queryKeys.sensors.lists(), params ?? {}] as const,
     detail: (id: string) => [...queryKeys.sensors.all, "detail", id] as const,
   },
+  channels: {
+    all: ["channels"] as const,
+    lists: () => [...queryKeys.channels.all, "list"] as const,
+    list: (params?: ListParams) =>
+      [...queryKeys.channels.lists(), params ?? {}] as const,
+    detail: (id: string) => [...queryKeys.channels.all, "detail", id] as const,
+  },
 };

@@ -94,3 +94,15 @@ export type CrudApi<TEntity, TPayload> = {
   update: (id: string, payload: TPayload) => Promise<TEntity>;
   remove: (id: string) => Promise<void>;
 };
+
+export type Channel = {
+  id: string;
+  telegramId: string;
+  name: string | null;
+  rooms: { id: string; name: string }[];
+};
+
+export type ChannelPayload = {
+  telegramId: string;
+  name?: string;
+};
