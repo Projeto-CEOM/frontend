@@ -4,8 +4,8 @@ import type { Channel } from "@/api/channels";
 
 
 export const channelSchema = yup.object({
-  telegramId: yup.string().label("ID do Telegram").trim().required(),
-  name: yup.string().label("Nome do Canal").trim().optional(),
+  telegramId: yup.string().label("ID do Telegram").trim().required().max(100, "Limite máximo de 100 caracteres"),
+  name: yup.string().label("Nome do Canal").trim().optional().max(100, "Limite máximo de 100 caracteres"),
 });
 
 export type ChannelFormValues = yup.InferType<typeof channelSchema>;

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Trash2, Pencil, Link } from "lucide-react";
 import { useChannels, useDeleteChannel } from "@/api/queries/useChannels";
@@ -7,6 +7,7 @@ import Button from "@/components/common/Button";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import { usePermissions } from "@/hooks/UsePermissions";
 import ChannelForm from "./ChannelForm";
+import RoomLinkModal from "./RoomLinkModal";
 
 const PAGE_SIZE = 10;
 
@@ -30,6 +31,7 @@ const Channels: React.FC = () => {
   const isFormOpen = formParam !== null;
   const editingChannelId = formParam && formParam !== "novo" ? formParam : null;
   const formAllowed = isFormOpen && (editingChannelId ? can("u") : can("c"));
+ const [linkingChannel, setLinkingChannel] = useState<Channel | null>(null);
 
   const openForm = (channel?: Channel) => {
     const next = new URLSearchParams(searchParams);
@@ -65,8 +67,8 @@ const Channels: React.FC = () => {
 
   const handleSaved = closeForm;
 
-  const openLinkModal = (channelId: string) => {
-    console.log("Abrir modal de vinculação de salas para o canal", channelId);
+  const openLinkModal = (channel: Channel) => {
+    setLinkingChannel(channel);
   };
 
   useEffect(() => {
@@ -108,7 +110,10 @@ const Channels: React.FC = () => {
       render: (channel) => (
         <span className="text-ink-soft">
           {channel.rooms && channel.rooms.length > 0
-            ? channel.rooms.map((r) => r.name).join(", ")
+            ? channel.rooms
+                .map((r) => r.name)
+                .sort((a, b) => a.localeCompare(b)) // Ordena em ordem alfabética
+                .join(", ")
             : "Nenhuma sala"}
         </span>
       ),
@@ -125,7 +130,7 @@ const Channels: React.FC = () => {
                   <>
                     <button
                       type="button"
-                      onClick={() => openLinkModal(channel.id)}
+                      onClick={() => openLinkModal(channel)}
                       aria-label={`Vincular salas a ${channel.name || channel.telegramId}`}
                       className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-primary/10 hover:text-primary"
                     >
@@ -145,9 +150,7 @@ const Channels: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                        if(confirm("Deseja remover este canal?")) {
-                            deleteChannel.mutate(channel.id);
-                        }
+                      deleteChannel.mutate(channel.id);
                     }}
                     aria-label={`Remover ${channel.name || channel.telegramId}`}
                     className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-danger-soft hover:text-danger"
@@ -194,6 +197,13 @@ const Channels: React.FC = () => {
           emptyMessage="Nenhum canal cadastrado ainda."
         />
       </div>
+
+        {linkingChannel && (
+          <RoomLinkModal 
+            channel={linkingChannel} 
+            onClose={() => setLinkingChannel(null)} 
+          />
+        )}
     </div>
   );
 };
