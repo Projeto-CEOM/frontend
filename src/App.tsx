@@ -6,6 +6,7 @@ import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Rooms from "@/pages/Rooms";
 import Sensors from "@/pages/Sensors";
+import Readings from "@/pages/Readings";
 import AppShell from "@/layouts/AppShell";
 
 const App: React.FC = () => {
@@ -20,6 +21,8 @@ const App: React.FC = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/salas" element={<Rooms />} />
               <Route path="/sensores" element={<Sensors />} />
+              
+              <Route path="/leituras" element={<Readings />} />
             </Route>
           </Route>
         </Route>

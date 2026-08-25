@@ -11,6 +11,7 @@ import {
   FileText,
   PanelLeftClose,
   PanelLeftOpen,
+  List,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useAuth } from "@/hooks/UseAuth";
@@ -28,6 +29,7 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/sensores", label: "Sensores", icon: CircuitBoard },
   { to: "/canais", label: "Canais", icon: Send },
   { to: "/relatorios", label: "Relatórios", icon: FileText },
+  { to: "/leituras", label: "Leituras", icon: List },
 ];
 
 const Sidebar: React.FC = () => {

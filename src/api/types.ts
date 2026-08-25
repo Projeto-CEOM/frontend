@@ -55,6 +55,16 @@ export type Sensor = {
   createdAt?: string;
 } & Partial<EnvironmentLimits>;
 
+export type Reading = {
+  id: string;
+  tempValue: number;
+  humValue: number;
+  co2Value?: number;
+  sensorIdentifier: string
+  roomName: string;
+  recordedAt?: string;
+};
+
 export type SortOrder = "asc" | "desc";
 
 /** Bloco `meta` que a API devolve junto de toda listagem. */
@@ -88,9 +98,9 @@ export type ListParams = {
  * com `meta`. As demais operações trabalham com a entidade direto.
  */
 export type CrudApi<TEntity, TPayload> = {
-  list: (params?: ListParams) => Promise<Paginated<TEntity>>;
-  get: (id: string) => Promise<TEntity>;
-  create: (payload: TPayload) => Promise<TEntity>;
-  update: (id: string, payload: TPayload) => Promise<TEntity>;
-  remove: (id: string) => Promise<void>;
+  list?: (params?: ListParams) => Promise<Paginated<TEntity>>;
+  get?: (id: string) => Promise<TEntity>;
+  create?: (payload: TPayload) => Promise<TEntity>;
+  update?: (id: string, payload: TPayload) => Promise<TEntity>;
+  remove?: (id: string) => Promise<void>;
 };

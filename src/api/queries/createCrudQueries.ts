@@ -28,7 +28,7 @@ type CreateCrudQueriesOptions<TEntity, TPayload> = {
   api: CrudApi<TEntity, TPayload>;
   keys: EntityKeys;
   /** Mensagens de sucesso — os erros usam a mensagem do `ApiError`. */
-  messages: CrudMessages;
+  messages?: CrudMessages;
   /** Outras chaves afetadas pela escrita (ex.: sensores dependem de salas). */
   relatedKeys?: QueryKey[];
 };
@@ -80,10 +80,10 @@ export const createCrudQueries = <
     });
   };
 
-  const useList = (params?: ListParams) =>
+  const useList = (params?: ListParams) => api.list &&
     useQuery({
       queryKey: keys.list(params),
-      queryFn: () => api.list(params),
+      queryFn: () => api.list!(params),
       // Trocar de página mantém as linhas anteriores enquanto a próxima chega:
       // sem skeleton, sem tabela vazia piscando.
       placeholderData: keepPreviousData,
@@ -109,9 +109,9 @@ export const createCrudQueries = <
       return undefined;
     };
 
-    return useQuery({
+    return api.get && useQuery({
       queryKey: keys.detail(id ?? ""),
-      queryFn: () => api.get(id as string),
+      queryFn: () => api.get!(id as string),
       enabled: Boolean(id),
       // Abre o formulário já preenchido com o item da lista; a idade do dado
       // vem da própria listagem, então a revalidação acontece na hora certa.
@@ -135,9 +135,9 @@ export const createCrudQueries = <
     const queryClient = useQueryClient();
     const invalidateAll = useInvalidateAll();
 
-    return useMutation({
-      mutationFn: (payload: TPayload) => api.create(payload),
-      meta: { successMessage: messages.created },
+    return api.create && useMutation({
+      mutationFn: (payload: TPayload) => api.create!(payload),
+      meta: { successMessage: messages?.created },
       onMutate: async (payload) => {
         await queryClient.cancelQueries(listFilter());
 
@@ -164,10 +164,10 @@ export const createCrudQueries = <
     const queryClient = useQueryClient();
     const invalidateAll = useInvalidateAll();
 
-    return useMutation({
+    return api.update && useMutation({
       mutationFn: ({ id, payload }: { id: string; payload: TPayload }) =>
-        api.update(id, payload),
-      meta: { successMessage: messages.updated },
+        api.update!(id, payload),
+      meta: { successMessage: messages?.updated },
       onMutate: async ({ id, payload }) => {
         await queryClient.cancelQueries({ queryKey: keys.all });
 
@@ -207,9 +207,9 @@ export const createCrudQueries = <
     const queryClient = useQueryClient();
     const invalidateAll = useInvalidateAll();
 
-    return useMutation({
-      mutationFn: (id: string) => api.remove(id),
-      meta: { successMessage: messages.removed },
+    return api.remove && useMutation({
+      mutationFn: (id: string) => api.remove!(id),
+      meta: { successMessage: messages?.removed },
       onMutate: async (id) => {
         await queryClient.cancelQueries(listFilter());
 
