@@ -10,10 +10,6 @@ type RoomStatusGridProps = {
   isLoading?: boolean;
 };
 
-/**
- * Visão de plantão: o estado atual de todas as salas de uma vez, sem filtrar.
- * Sala com excursão vem primeiro (ver `roomStatuses`).
- */
 const RoomStatusGrid: React.FC<RoomStatusGridProps> = ({
   statuses,
   now,

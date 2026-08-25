@@ -12,9 +12,12 @@ import {
   FileText,
   PanelLeftClose,
   PanelLeftOpen,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useAuth } from "@/hooks/UseAuth";
+import { usePermissions } from "@/hooks/UsePermissions";
+import type { PermissionKey } from "@/utils/permissions";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   mobileNavClosed,
@@ -23,13 +26,20 @@ import {
   sidebarToggled,
 } from "@/store/slices/layoutSlice";
 
-const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
+/** `permission` ausente = item visível para qualquer sessão autenticada. */
+const NAV_ITEMS: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  permission?: PermissionKey;
+}[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/alertas", label: "Alertas", icon: TriangleAlert },
   { to: "/salas", label: "Salas", icon: DoorOpen },
   { to: "/sensores", label: "Sensores", icon: CircuitBoard },
   { to: "/canais", label: "Canais", icon: Send },
   { to: "/relatorios", label: "Relatórios", icon: FileText },
+  { to: "/usuarios", label: "Usuários", icon: UsersRound, permission: "users" },
 ];
 
 const Sidebar: React.FC = () => {
@@ -38,6 +48,11 @@ const Sidebar: React.FC = () => {
   const collapsed = useAppSelector(selectSidebarCollapsed);
   const mobileNavOpen = useAppSelector(selectMobileNavOpen);
   const navigate = useNavigate();
+  const { can } = usePermissions();
+
+  const navItems = NAV_ITEMS.filter(
+    ({ permission }) => !permission || can(permission),
+  );
 
   const initial = (user?.name ?? "").trim().charAt(0).toUpperCase() || "?";
 
@@ -106,7 +121,7 @@ const Sidebar: React.FC = () => {
       </button>
 
       <nav className="flex flex-1 flex-col gap-3 px-3 pt-2">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

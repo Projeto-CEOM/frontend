@@ -3,18 +3,12 @@ import { cn } from "@/utils/cn";
 import { formatElapsedSince } from "@/utils/format";
 
 type LiveStatusProps = {
-  /** `dataUpdatedAt` da query — quando o dado em tela chegou. */
   updatedAt: number;
   isFetching: boolean;
   onRefresh: () => void;
   now: number;
 };
 
-/**
- * Num monitoramento 24x7 saber se o dado é fresco importa tanto quanto o
- * valor. O painel já revalida sozinho a cada minuto; aqui isso fica visível,
- * com a opção de forçar agora.
- */
 const LiveStatus: React.FC<LiveStatusProps> = ({
   updatedAt,
   isFetching,

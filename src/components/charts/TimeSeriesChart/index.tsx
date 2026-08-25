@@ -37,11 +37,6 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
   limits,
   minHeight = 260,
 }) => {
-  /**
-   * Linha precisa de dois pontos para existir. Quando o período agrupa tudo em
-   * um ou dois intervalos (janela longa com pouco histórico), sem marcador o
-   * gráfico ficaria vazio mesmo havendo dado — então os pontos aparecem.
-   */
   const showDots = points.length <= 3;
   const renderTooltip = ({ active, payload, label }: TooltipRenderProps) => {
     if (!active || !payload?.length) return null;

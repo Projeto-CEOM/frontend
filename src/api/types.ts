@@ -4,6 +4,8 @@ export type AuthUser = {
   id: string;
   name: string;
   email: string;
+  /** Login completo, `usuario@tenant` — é daqui que sai o slug do tenant. */
+  account?: string;
   /** Define a máscara de permissões da sessão (ver `@/utils/permissions`). */
   role?: Role;
 };
@@ -148,4 +150,36 @@ export type Channel = {
 export type ChannelPayload = {
   telegramId: string;
   name?: string;
+};
+
+/** Usuário do tenant — espelha o `serialize()` de `UserController.js`. */
+export type User = {
+  id: string;
+  tenantId: string;
+  /** Login completo, já com o sufixo `@tenant`. */
+  account: string;
+  name: string;
+  email: string | null;
+  /** Máscara própria do backend; o front deriva as permissões do `role`. */
+  permissions: number | null;
+  role: Role;
+  createdAt?: string;
+};
+
+export type UserPayload = {
+  /**
+   * Só a parte local — o backend acrescenta o `@tenant` da sessão. Ausente na
+   * edição: o login não muda depois de criado.
+   */
+  account?: string;
+  name: string;
+  email?: string | null;
+  role: Role;
+  /** Obrigatória no cadastro; na edição, só quando for trocar. */
+  password?: string;
+};
+
+export type UserListParams = ListParams & {
+  role?: Role;
+  q?: string;
 };

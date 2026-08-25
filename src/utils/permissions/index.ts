@@ -64,6 +64,30 @@ export const ROLE_MASKS: Record<Role, number> = {
   viewer: parseMask(import.meta.env.VITE_ROLE_VIEWER, FALLBACK_MASKS.viewer),
 };
 
+export const ROLE_LABELS: Record<Role, string> = {
+  admin: "Administrador",
+  owner: "Dono",
+  editor: "Editor",
+  viewer: "Visualizador",
+};
+
+
+const MANAGEABLE_ROLES: Record<Role, readonly Role[]> = {
+  admin: ["owner", "editor", "viewer"],
+  owner: ["editor", "viewer"],
+  editor: [],
+  viewer: [],
+};
+
+export const manageableRoles = (
+  actor: Role | null | undefined,
+): readonly Role[] => (actor ? MANAGEABLE_ROLES[actor] : []);
+
+export const canManageRole = (
+  actor: Role | null | undefined,
+  target: Role,
+): boolean => manageableRoles(actor).includes(target);
+
 const isRole = (value: unknown): value is Role =>
   typeof value === "string" && (ROLES as readonly string[]).includes(value);
 

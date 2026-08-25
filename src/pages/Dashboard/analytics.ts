@@ -6,12 +6,6 @@ import { MEASURES, type MeasureKey, MEASURE_KEYS } from "./series";
 
 type SensorIndex = Map<string, Sensor>;
 
-/**
- * A leitura está dentro da faixa daquela grandeza?
- * `null` quando não dá para afirmar — sem valor ou sem limite cadastrado.
- * Distinguir "fora" de "não sei" importa: contar desconhecido como conforme
- * inflaria a taxa de conformidade justamente onde falta configuração.
- */
 export const isWithinLimits = (
   reading: SensorReading,
   sensor: Sensor | undefined,
@@ -28,7 +22,6 @@ export const isWithinLimits = (
   return value >= min && value <= max;
 };
 
-/** Conforme = todas as grandezas com limite conhecido estão dentro da faixa. */
 const readingCompliance = (
   reading: SensorReading,
   sensor: Sensor | undefined,
@@ -41,23 +34,13 @@ const readingCompliance = (
   return checks.every(Boolean);
 };
 
-/* ── Conformidade por sala ────────────────────────────────────────────── */
-
 export type RoomCompliance = {
   room: string;
-  /** Percentual de leituras dentro da faixa (0–100). */
   percent: number;
   inRange: number;
   total: number;
 };
 
-/**
- * Percentual de **leituras** dentro da faixa — não de tempo. Com o ESP32
- * enviando em intervalo fixo as duas medidas praticamente coincidem, mas o
- * rótulo diz "leituras" porque é isso que de fato foi medido.
- *
- * Ordena da pior para a melhor: quem precisa de atenção aparece primeiro.
- */
 export const complianceByRoom = (
   readings: SensorReading[],
   sensorById: SensorIndex,
@@ -65,7 +48,10 @@ export const complianceByRoom = (
   const totals = new Map<string, { inRange: number; total: number }>();
 
   for (const reading of readings) {
-    const compliant = readingCompliance(reading, sensorById.get(reading.sensorId));
+    const compliant = readingCompliance(
+      reading,
+      sensorById.get(reading.sensorId),
+    );
     if (compliant === null) continue;
 
     const room = reading.roomName ?? "Sem sala";
@@ -87,8 +73,6 @@ export const complianceByRoom = (
     .sort((a, b) => a.percent - b.percent);
 };
 
-/* ── Mapa de calor: dia da semana × hora ──────────────────────────────── */
-
 export const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export type HeatmapCell = {
@@ -96,15 +80,9 @@ export type HeatmapCell = {
   hour: number;
   total: number;
   out: number;
-  /** Fração fora da faixa (0–1); `null` quando não houve leitura. */
   ratio: number | null;
 };
 
-/**
- * Onde as excursões se concentram ao longo da semana. É o diagnóstico que o
- * projeto pede: risco que só aparece fora do horário comercial (climatização
- * desligada à noite, pico de umidade ao amanhecer) fica visível como faixa.
- */
 export const excursionHeatmap = (
   readings: SensorReading[],
   sensorById: SensorIndex,
@@ -112,7 +90,10 @@ export const excursionHeatmap = (
   const grid = new Map<string, { total: number; out: number }>();
 
   for (const reading of readings) {
-    const compliant = readingCompliance(reading, sensorById.get(reading.sensorId));
+    const compliant = readingCompliance(
+      reading,
+      sensorById.get(reading.sensorId),
+    );
     if (compliant === null) continue;
 
     const date = new Date(reading.recordedAt);
@@ -142,20 +123,13 @@ export const excursionHeatmap = (
   );
 };
 
-/* ── Flutuação diária ─────────────────────────────────────────────────── */
-
 export type DailySwing = {
   day: number;
   min: number;
   max: number;
-  /** Amplitude do dia (máx − mín). */
   amplitude: number;
 };
 
-/**
- * Amplitude por dia. A curva de média esconde justamente o que o projeto trata
- * como risco próprio: a variação brusca que faz o material dilatar e contrair.
- */
 export const dailySwing = (
   readings: SensorReading[],
   measure: MeasureKey,
@@ -180,7 +154,10 @@ export const dailySwing = (
     days.set(
       day,
       current
-        ? { min: Math.min(current.min, value), max: Math.max(current.max, value) }
+        ? {
+            min: Math.min(current.min, value),
+            max: Math.max(current.max, value),
+          }
         : { min: value, max: value },
     );
   }
@@ -195,19 +172,18 @@ export const dailySwing = (
     }));
 };
 
-/* ── Estado atual por sala ────────────────────────────────────────────── */
-
 export type RoomStatus = {
   roomId: string;
   roomName: string;
   sensorLabel: string | null;
   recordedAt: string | null;
-  values: Record<MeasureKey, { value: number | null; withinLimits: boolean | null }>;
-  /** Alguma grandeza fora da faixa na última leitura. */
+  values: Record<
+    MeasureKey,
+    { value: number | null; withinLimits: boolean | null }
+  >;
   hasExcursion: boolean;
 };
 
-/** Última leitura de cada sala — a visão de plantão, sem precisar filtrar. */
 export const roomStatuses = (
   readings: SensorReading[],
   rooms: Room[],
@@ -237,7 +213,9 @@ export const roomStatuses = (
           measure,
           {
             value: reading?.[MEASURES[measure].field] ?? null,
-            withinLimits: reading ? isWithinLimits(reading, sensor, measure) : null,
+            withinLimits: reading
+              ? isWithinLimits(reading, sensor, measure)
+              : null,
           },
         ]),
       ) as RoomStatus["values"];
@@ -253,7 +231,6 @@ export const roomStatuses = (
         ),
       };
     })
-    // Sala com problema primeiro; sem leitura por último.
     .sort((a, b) => {
       if (a.hasExcursion !== b.hasExcursion) return a.hasExcursion ? -1 : 1;
       if (!a.recordedAt !== !b.recordedAt) return a.recordedAt ? -1 : 1;
@@ -261,13 +238,6 @@ export const roomStatuses = (
     });
 };
 
-/* ── Saúde dos sensores ───────────────────────────────────────────────── */
-
-/**
- * Sem leitura nesse intervalo o sensor é tratado como mudo. Três vezes o
- * intervalo de envio previsto no projeto (10 min) — tolera uma perda de Wi-Fi
- * pontual sem alarme falso.
- */
 export const OFFLINE_AFTER_MS = 30 * 60_000;
 
 export type SensorHealth = {
@@ -275,15 +245,10 @@ export type SensorHealth = {
   label: string;
   roomName: string | null;
   lastReadingAt: string | null;
-  /** `null` quando nunca enviou nada no período. */
   minutesAgo: number | null;
   isSilent: boolean;
 };
 
-/**
- * Quem parou de enviar. Falha silenciosa é o pior caso do monitoramento: sem
- * leitura não há alerta, e o painel fica verde enquanto a sala sai da faixa.
- */
 export const sensorHealth = (
   readings: SensorReading[],
   sensors: Sensor[],
@@ -321,8 +286,6 @@ export const sensorHealth = (
       return (b.minutesAgo ?? Infinity) - (a.minutesAgo ?? Infinity);
     });
 };
-
-/* ── Últimos alertas ──────────────────────────────────────────────────── */
 
 export const recentAlerts = (alerts: AlertLog[], limit = 6) =>
   [...alerts]

@@ -20,7 +20,7 @@ const Channels: React.FC = () => {
     page,
     pageSize: PAGE_SIZE,
   });
-  
+
   const channels = data?.data ?? [];
   const meta = data?.meta;
 
@@ -31,7 +31,7 @@ const Channels: React.FC = () => {
   const isFormOpen = formParam !== null;
   const editingChannelId = formParam && formParam !== "novo" ? formParam : null;
   const formAllowed = isFormOpen && (editingChannelId ? can("u") : can("c"));
- const [linkingChannel, setLinkingChannel] = useState<Channel | null>(null);
+  const [linkingChannel, setLinkingChannel] = useState<Channel | null>(null);
 
   const openForm = (channel?: Channel) => {
     const next = new URLSearchParams(searchParams);
@@ -90,29 +90,29 @@ const Channels: React.FC = () => {
     {
       header: "ID do Telegram",
       align: "left",
-      width: "25%",
+      width: "30%",
       render: (channel) => (
-        <span className="font-medium text-ink">{channel.telegramId}</span>
+        <span className="truncate font-medium text-ink">{channel.telegramId}</span>
       ),
     },
     {
       header: "Nome do Canal",
       align: "left",
-      width: "30%",
+      width: "25%",
       render: (channel) => (
         <span className="text-ink-soft">{channel.name || "-"}</span>
       ),
     },
     {
       header: "Salas Vinculadas",
-      align: "left",
-      width: "25%",
+      align: "center",
+      width: "40%",
       render: (channel) => (
         <span className="text-ink-soft">
           {channel.rooms && channel.rooms.length > 0
             ? channel.rooms
                 .map((r) => r.name)
-                .sort((a, b) => a.localeCompare(b)) // Ordena em ordem alfabética
+                .sort((a, b) => a.localeCompare(b))
                 .join(", ")
             : "Nenhuma sala"}
         </span>
@@ -123,7 +123,7 @@ const Channels: React.FC = () => {
           {
             header: "Ações",
             align: "center" as const,
-            width: "20%",
+            width: "15%",
             render: (channel: Channel) => (
               <div className="flex items-center justify-center gap-1">
                 {can("u") && (
@@ -183,8 +183,7 @@ const Channels: React.FC = () => {
           </Button>
         )}
       </div>
-      
-      
+
       <div className="mt-6">
         <DataTable
           columns={columns}
@@ -198,12 +197,12 @@ const Channels: React.FC = () => {
         />
       </div>
 
-        {linkingChannel && (
-          <RoomLinkModal 
-            channel={linkingChannel} 
-            onClose={() => setLinkingChannel(null)} 
-          />
-        )}
+      {linkingChannel && (
+        <RoomLinkModal
+          channel={linkingChannel}
+          onClose={() => setLinkingChannel(null)}
+        />
+      )}
     </div>
   );
 };

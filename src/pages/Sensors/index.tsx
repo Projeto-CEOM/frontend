@@ -96,7 +96,7 @@ const Sensors: React.FC = () => {
       align: "left",
       width: "25%",
       render: (sensor) => (
-        <span className="font-medium text-ink">{sensor.identifier}</span>
+        <span className="truncate font-medium text-ink">{sensor.identifier}</span>
       ),
     },
     {

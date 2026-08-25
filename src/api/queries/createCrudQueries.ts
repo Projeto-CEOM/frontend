@@ -31,6 +31,12 @@ type CreateCrudQueriesOptions<TEntity, TPayload> = {
   messages: CrudMessages;
   /** Outras chaves afetadas pela escrita (ex.: sensores dependem de salas). */
   relatedKeys?: QueryKey[];
+  /**
+   * Converte o payload na linha otimista. Sem isso o payload é copiado cru
+   * para o cache, o que vaza campos que não pertencem à entidade — a senha do
+   * formulário de usuários, por exemplo. Padrão: identidade.
+   */
+  toOptimistic?: (payload: TPayload) => Partial<TEntity>;
 };
 
 /** Snapshot de todas as páginas em cache, para rollback. */
@@ -56,6 +62,7 @@ export const createCrudQueries = <
   keys,
   messages,
   relatedKeys = [],
+  toOptimistic = (payload) => payload as unknown as Partial<TEntity>,
 }: CreateCrudQueriesOptions<TEntity, TPayload>) => {
   const listFilter = () => ({ queryKey: keys.lists() });
 
@@ -143,7 +150,10 @@ export const createCrudQueries = <
 
         const snapshot = snapshotLists(queryClient);
         const optimisticId = `temp-${nanoid()}`;
-        const optimistic = { ...payload, id: optimisticId } as unknown as TEntity;
+        const optimistic = {
+          ...toOptimistic(payload),
+          id: optimisticId,
+        } as unknown as TEntity;
 
         // A ordenação é do servidor, então não dá para saber a posição real:
         // a linha entra no fim da página aberta e o `onSettled` acerta tudo.
@@ -175,18 +185,19 @@ export const createCrudQueries = <
         const previousDetail = queryClient.getQueryData<TEntity>(
           keys.detail(id),
         );
+        const patch = toOptimistic(payload);
 
         patchLists(queryClient, (page) => ({
           ...page,
           data: page.data.map((item) =>
-            item.id === id ? { ...item, ...payload } : item,
+            item.id === id ? { ...item, ...patch } : item,
           ),
         }));
 
         if (previousDetail) {
           queryClient.setQueryData<TEntity>(keys.detail(id), {
             ...previousDetail,
-            ...payload,
+            ...patch,
           });
         }
 

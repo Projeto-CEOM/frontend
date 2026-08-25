@@ -24,7 +24,6 @@ const MEASURE_ICONS: Record<MeasureKey, LucideIcon> = {
   humidity: Droplets,
 };
 
-/** Estado nunca é só cor: cada um traz ícone + texto. */
 const STATUS_BADGE: Record<
   Exclude<LimitStatus, "unknown">,
   { label: string; Icon: LucideIcon; className: string }
@@ -47,18 +46,12 @@ const STATUS_BADGE: Record<
 };
 
 type CurrentReadingProps = {
-  /** A leitura mais recente do recorte — uma só, para as duas grandezas. */
   reading: SensorReading | null;
-  /** Sensor que a mediu, de onde saem os limites da comparação. */
   sensor: Sensor | undefined;
   now: number;
   isLoading?: boolean;
 };
 
-/**
- * Condições atuais do recorte filtrado. Fica no mesmo cartão dos filtros
- * porque é leitura do mesmo recorte: mudou o filtro, mudou o número.
- */
 const CurrentReading: React.FC<CurrentReadingProps> = ({
   reading,
   sensor,
@@ -102,8 +95,6 @@ const CurrentReading: React.FC<CurrentReadingProps> = ({
                 {MEASURES[measure].label}
               </p>
               <div className="mt-1 flex items-center gap-2">
-                {/* Figuras proporcionais: em tamanho grande, dígitos de largura
-                    fixa deixam o número solto. */}
                 <span
                   className={cn(
                     "text-2xl font-semibold",
@@ -131,8 +122,6 @@ const CurrentReading: React.FC<CurrentReadingProps> = ({
         })}
       </div>
 
-      {/* A origem aparece uma vez só, e não por card: os dois valores vêm da
-          mesma leitura, do mesmo sensor, no mesmo instante. */}
       <p className="text-xs text-ink-faint">
         Última leitura · {reading.sensorIdentifier ?? "sensor desconhecido"}
         {reading.roomName ? ` · ${reading.roomName}` : ""} ·{" "}

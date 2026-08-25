@@ -24,6 +24,7 @@ export type RecordFormInputField<T extends FieldValues> = {
   min?: string;
   max?: string;
   required?: boolean;
+  disabled?: boolean;
   options?: Array<{ value: string; label: string }>;
   /** Efeitos colaterais na troca do valor (ex.: preencher campos irmãos). */
   onValueChange?: (value: string) => void;
@@ -130,6 +131,7 @@ const RecordForm = <T extends FieldValues>({
               label={field.label}
               icon={field.icon}
               required={field.required}
+              disabled={field.disabled}
               error={message}
               placeholder={field.placeholder}
               options={field.options ?? []}
@@ -149,6 +151,7 @@ const RecordForm = <T extends FieldValues>({
             min={field.min}
             max={field.max}
             required={field.required}
+            disabled={field.disabled}
             error={message}
             label={field.label}
             icon={field.icon}

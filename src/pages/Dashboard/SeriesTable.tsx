@@ -7,10 +7,6 @@ type SeriesTableProps = {
   formatTime: (time: number) => string;
 };
 
-/**
- * Twin em tabela dos gráficos de linha: mesmos números, sem depender de
- * enxergar cor nem de passar o mouse. Mais recente primeiro.
- */
 const SeriesTable: React.FC<SeriesTableProps> = ({
   points,
   series,
@@ -23,7 +19,10 @@ const SeriesTable: React.FC<SeriesTableProps> = ({
         <tr className="border-b border-border text-ink-faint">
           <th className="px-3 py-2 font-medium">Horário</th>
           {series.map((definition) => (
-            <th key={definition.key} className="px-3 py-2 text-right font-medium">
+            <th
+              key={definition.key}
+              className="px-3 py-2 text-right font-medium"
+            >
               {definition.label}
             </th>
           ))}

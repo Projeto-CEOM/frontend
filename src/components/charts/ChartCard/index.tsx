@@ -67,9 +67,6 @@ const ChartCard: React.FC<ChartCardProps> = ({
         </div>
       </header>
 
-      {/* Coluna que ocupa a altura restante do card: quando o card estica para
-          acompanhar o vizinho da linha, o gráfico estica junto em vez de
-          deixar um vazio embaixo. */}
       <div className="relative mt-4 flex min-h-0 flex-1 flex-col">
         {isLoading ? (
           <div className="min-h-64 flex-1 animate-pulse rounded-xl bg-surface-hover" />

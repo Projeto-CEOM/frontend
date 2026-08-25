@@ -117,7 +117,7 @@ const Alerts: React.FC = () => {
       align: "left",
       width: "10%",
       render: (alert) => (
-        <span className="text-ink-soft">
+        <span className="truncate font-medium text-ink">
           {formatDateTime(alert.triggeredAt)}
         </span>
       ),

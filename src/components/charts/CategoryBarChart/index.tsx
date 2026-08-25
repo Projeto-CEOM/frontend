@@ -17,7 +17,6 @@ type CategoryBarChartProps = {
   formatValue?: (value: number) => string;
   domain?: [number, number];
   categoryWidth?: number;
-  /** Piso de altura; acima disso o gráfico acompanha o card. */
   minHeight?: number;
 };
 
@@ -32,8 +31,6 @@ const CategoryBarChart: React.FC<CategoryBarChartProps> = ({
   const isHorizontal = orientation === "bars";
 
   return (
-    // `height="100%"` + `flex-1`: preenche o espaço que o card oferece, sem
-    // encolher abaixo do piso quando o card é curto.
     <ResponsiveContainer
       width="100%"
       height="100%"

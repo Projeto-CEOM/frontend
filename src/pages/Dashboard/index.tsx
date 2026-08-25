@@ -47,14 +47,8 @@ import {
   type PeriodKey,
 } from "./series";
 
-/** Os selects precisam de todas as salas/sensores, não só da primeira página. */
 const LOOKUP_PARAMS = { page: 1, pageSize: 200 };
 
-/**
- * A janela de tempo é reancorada a cada 5 min (arredondando o "agora"), então
- * a chave da query fica estável entre renders e o painel acompanha o relógio
- * sem refazer a busca a cada segundo.
- */
 const ANCHOR_MS = 5 * 60_000;
 
 const TAB_IDS = ["agora", "historico", "alertas"] as const;
@@ -103,16 +97,12 @@ const Dashboard: React.FC = () => {
   const readings = readingsQuery.data?.data ?? [];
   const alerts = alertsQuery.data?.data ?? [];
 
-  // O backend devolve no máximo 1000 leituras por requisição e ainda não expõe
-  // agregação — quando o período tem mais que isso, o gráfico cobre só as mais
-  // recentes. Melhor avisar do que desenhar um recorte parcial em silêncio.
   const readingsTotal = readingsQuery.data?.meta.total ?? 0;
   const isTruncated = readingsTotal > readings.length;
 
   const sensorColors = buildSensorColors(sensors);
   const sensorById = new Map(sensors.map((sensor) => [sensor.id, sensor]));
 
-  // Os painéis de "agora" respeitam o mesmo recorte dos filtros.
   const scopedRooms = roomId
     ? allRooms.filter((room) => room.id === roomId)
     : allRooms;
@@ -143,7 +133,6 @@ const Dashboard: React.FC = () => {
     } else {
       next.delete("sala");
     }
-    // O sensor escolhido pode não pertencer mais à sala selecionada.
     next.delete("sensor");
     setSearchParams(next);
   };
@@ -159,8 +148,6 @@ const Dashboard: React.FC = () => {
     readingsQuery.refetch();
     alertsQuery.refetch();
   };
-
-  /* ── Formatação de tempo, conforme a janela ─────────────────────────── */
 
   const formatTick = (time: number) =>
     new Date(time).toLocaleString("pt-BR", {
@@ -183,9 +170,6 @@ const Dashboard: React.FC = () => {
       month: "2-digit",
     });
 
-  /* ── Dados derivados ───────────────────────────────────────────────── */
-
-  // Uma leitura só para as duas grandezas — ver `latestReading`.
   const currentReading = latestReading(readings);
   const currentSensor = currentReading
     ? sensorById.get(currentReading.sensorId)
@@ -206,11 +190,6 @@ const Dashboard: React.FC = () => {
   const alertRows = alertsByRoom(alerts);
   const latestAlerts = recentAlerts(alerts);
 
-  /**
-   * As abas escondem conteúdo, então os contadores precisam vazar o problema
-   * para fora: dá para ver que há sala fora da faixa ou sensor mudo sem abrir
-   * a aba "Agora".
-   */
   const nowIssues = roomsOutOfRange + silentSensors;
   const tabItems: TabItem[] = [
     {
@@ -241,8 +220,6 @@ const Dashboard: React.FC = () => {
   const isLoadingAlerts = alertsQuery.isLoading;
   const isFetchingAlerts = alertsQuery.isFetching && !isLoadingAlerts;
 
-  /* ── Cards de série temporal ───────────────────────────────────────── */
-
   const renderMeasureCard = (measure: MeasureKey) => {
     const config = MEASURES[measure];
     const { points, series: allSeries } = buildSeries({
@@ -252,13 +229,9 @@ const Dashboard: React.FC = () => {
       colors: sensorColors,
     });
 
-    // Acima do teto as cores deixam de se distinguir: mostramos as primeiras e
-    // avisamos, em vez de inventar cor nova.
     const series = allSeries.slice(0, MAX_SERIES);
     const hidden = allSeries.length - series.length;
 
-    // A faixa só aparece quando há um único sensor no gráfico: com vários, cada
-    // um tem o seu limite e uma faixa só seria mentira.
     const onlySensor =
       series.length === 1 ? sensorById.get(series[0].sensorId) : undefined;
 
@@ -318,8 +291,6 @@ const Dashboard: React.FC = () => {
       </ChartCard>
     );
   };
-
-  /* ── Cards de flutuação diária ─────────────────────────────────────── */
 
   const renderSwingCard = (measure: MeasureKey) => {
     const swings = dailySwing(readings, measure);
@@ -384,8 +355,6 @@ const Dashboard: React.FC = () => {
       </ChartCard>
     );
   };
-
-  /* ── Conteúdo de cada aba ──────────────────────────────────────────── */
 
   const renderAgoraPanel = () => (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -615,13 +584,7 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    // Altura exata do `main`: quem rola é o painel da aba, não a janela.
-    // O `min-h` é a válvula de escape para telas muito baixas: abaixo disso a
-    // área fixa engoliria a viewport e as abas ficariam inalcançáveis, então
-    // deixamos o `main` rolar em vez de esconder conteúdo.
     <div className="flex h-full min-h-150 flex-col">
-      {/* Área fixa. Filtros e KPIs respondem "está tudo bem agora?" e não
-          podem sair de vista enquanto se percorre o conteúdo da aba. */}
       <div className="shrink-0 px-6 pt-8 md:px-10">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -638,8 +601,6 @@ const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Filtros e condições atuais no mesmo cartão: os números logo abaixo
-            são a leitura deste recorte, então mudam junto com ele. */}
         <div className="mt-5 rounded-2xl border border-border bg-surface shadow-sm">
           <div className="flex flex-col gap-4 p-4 lg:flex-row lg:items-end">
             <div className="flex flex-col gap-1.5">
@@ -714,7 +675,7 @@ const Dashboard: React.FC = () => {
         {isTruncated && (
           <p className="mt-4 rounded-lg bg-surface-hover px-3 py-2 text-xs text-ink-soft">
             O período tem {readingsTotal.toLocaleString("pt-BR")} leituras e a
-            API devolve no máximo{" "}
+            busca devolve no máximo{" "}
             {READINGS_MAX_PAGE_SIZE.toLocaleString("pt-BR")} por consulta: os
             painéis usam as mais recentes. Reduza o período ou filtre por sensor
             para uma visão completa.
@@ -731,10 +692,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Única área rolável. `min-h-0` é o que deixa o flex encolher abaixo do
-          conteúdo — sem isso o painel estoura e a janela volta a rolar.
-          O `key` remonta o painel a cada troca: o `ResponsiveContainer` do
-          recharts mede o container ao montar e precisa de tamanho real. */}
       <div
         key={tab}
         role="tabpanel"

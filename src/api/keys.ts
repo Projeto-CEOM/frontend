@@ -2,6 +2,7 @@ import type {
   AlertListParams,
   ListParams,
   ReadingListParams,
+  UserListParams,
 } from "./types";
 
 /**
@@ -39,6 +40,13 @@ export const queryKeys = {
     list: (params?: AlertListParams) =>
       [...queryKeys.alerts.lists(), params ?? {}] as const,
     detail: (id: string) => [...queryKeys.alerts.all, "detail", id] as const,
+  },
+  users: {
+    all: ["users"] as const,
+    lists: () => [...queryKeys.users.all, "list"] as const,
+    list: (params?: UserListParams) =>
+      [...queryKeys.users.lists(), params ?? {}] as const,
+    detail: (id: string) => [...queryKeys.users.all, "detail", id] as const,
   },
   readings: {
     all: ["readings"] as const,

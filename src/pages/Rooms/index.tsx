@@ -90,7 +90,7 @@ const Rooms: React.FC = () => {
       align: "left",
       width: "25%",
       render: (room) => (
-        <span className="font-medium text-ink">{room.name}</span>
+        <span className="ftruncate font-medium text-ink">{room.name}</span>
       ),
     },
     {

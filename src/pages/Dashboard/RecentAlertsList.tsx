@@ -21,7 +21,6 @@ const RecentAlertsList: React.FC<RecentAlertsListProps> = ({
   now,
   isLoading = false,
 }) => {
-  // Antes dos returns antecipados: hook não pode ficar atrás de condicional.
   const navigate = useNavigate();
 
   if (isLoading) {
