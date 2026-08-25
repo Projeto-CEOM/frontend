@@ -13,7 +13,10 @@ const AppShell: React.FC = () => {
   const mobileNavOpen = useAppSelector(selectMobileNavOpen);
 
   return (
-    <div className="flex min-h-screen w-full bg-canvas">
+    // Altura fixa de viewport + `overflow-hidden`: a janela nunca rola, quem
+    // rola é o `main`. Assim a sidebar não sai de vista e cada tela pode
+    // definir a própria área de rolagem (ver Dashboard).
+    <div className="flex h-screen w-full overflow-hidden bg-canvas">
       <Sidebar />
 
       {mobileNavOpen && (
@@ -44,7 +47,9 @@ const AppShell: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        {/* `min-h-0` é o que permite ao filho encolher abaixo do conteúdo —
+            sem isso o flex estoura a altura e a rolagem interna não acontece. */}
+        <main className="min-h-0 flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>

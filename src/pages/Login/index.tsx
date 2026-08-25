@@ -34,7 +34,7 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="animated-gradient min-h-screen w-full flex items-center justify-center p-4">
+    <div className="animated-gradient flex h-full w-full items-center justify-center overflow-y-auto p-4">
       <div className="w-full max-w-sm">
         <div className="rounded-2xl border border-white/40 bg-surface/75 p-8 shadow-2xl shadow-primary/20 backdrop-blur-xl">
           <div className="mb-8 flex items-center gap-2.5">

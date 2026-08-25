@@ -18,6 +18,19 @@
   --color-ink-faint: #94a3b8;
 }
 
+/*
+ * A janela nunca rola: o app ocupa exatamente a altura da viewport e cada tela
+ * define a própria área de rolagem (ver `AppShell` → `main`). Sem isso, um
+ * elemento auxiliar fora da tela — como o span de medição que o recharts
+ * anexa ao body — consegue esticar o documento e devolver a barra de rolagem.
+ */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 @keyframes gradient-shift {
   0% {
     background-position: 0% 50%;

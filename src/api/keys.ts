@@ -1,4 +1,8 @@
-import type { ListParams } from "./types";
+import type {
+  AlertListParams,
+  ListParams,
+  ReadingListParams,
+} from "./types";
 
 /**
  * Chaves de cache do react-query. Centralizadas para que invalidações e
@@ -28,5 +32,18 @@ export const queryKeys = {
     list: (params?: ListParams) =>
       [...queryKeys.channels.lists(), params ?? {}] as const,
     detail: (id: string) => [...queryKeys.channels.all, "detail", id] as const,
+  },
+  alerts: {
+    all: ["alerts"] as const,
+    lists: () => [...queryKeys.alerts.all, "list"] as const,
+    list: (params?: AlertListParams) =>
+      [...queryKeys.alerts.lists(), params ?? {}] as const,
+    detail: (id: string) => [...queryKeys.alerts.all, "detail", id] as const,
+  },
+  readings: {
+    all: ["readings"] as const,
+    lists: () => [...queryKeys.readings.all, "list"] as const,
+    list: (params?: ReadingListParams) =>
+      [...queryKeys.readings.lists(), params ?? {}] as const,
   },
 };

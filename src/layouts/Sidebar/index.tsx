@@ -7,6 +7,7 @@ import {
   Thermometer,
   type LucideIcon,
   CircuitBoard,
+  TriangleAlert,
   Send,
   FileText,
   PanelLeftClose,
@@ -24,6 +25,7 @@ import {
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/alertas", label: "Alertas", icon: TriangleAlert },
   { to: "/salas", label: "Salas", icon: DoorOpen },
   { to: "/sensores", label: "Sensores", icon: CircuitBoard },
   { to: "/canais", label: "Canais", icon: Send },

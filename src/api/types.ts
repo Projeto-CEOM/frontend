@@ -95,6 +95,49 @@ export type CrudApi<TEntity, TPayload> = {
   remove: (id: string) => Promise<void>;
 };
 
+export type AlertFamily = "temperature" | "humidity" | "co2";
+
+export type AlertLog = {
+  id: string;
+  roomId: string;
+  roomName: string | null;
+  sensorId: string | null;
+  sensorIdentifier: string | null;
+  alertType: string | null;
+  value: number | null;
+  message: string | null;
+  triggeredAt: string;
+};
+
+export type AlertListParams = ListParams & {
+  roomId?: string;
+  sensorId?: string;
+  type?: AlertFamily;
+  alertType?: string;
+  from?: string;
+  to?: string;
+};
+
+/** Leitura bruta enviada pelo ESP32 — valores podem faltar (envio parcial). */
+export type SensorReading = {
+  id: string;
+  sensorId: string;
+  sensorIdentifier: string | null;
+  roomId: string | null;
+  roomName: string | null;
+  tempValue: number | null;
+  humValue: number | null;
+  co2Value: number | null;
+  recordedAt: string;
+};
+
+export type ReadingListParams = ListParams & {
+  sensorId?: string;
+  roomId?: string;
+  from?: string;
+  to?: string;
+};
+
 export type Channel = {
   id: string;
   telegramId: string;

@@ -3,7 +3,10 @@ import { cn } from "../../../utils/cn";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "outline" | "filled" | "ghost" | "menu";
+  /** Elemento já renderizado (`<Icone />`), não a referência do componente. */
   icon?: React.ReactNode;
+  /** Lado do ícone em relação ao texto. */
+  iconPosition?: "start" | "end";
   loading?: boolean;
   loadingText?: string;
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => Promise<void> | void;
@@ -17,6 +20,7 @@ const Button: React.ForwardRefRenderFunction<HTMLButtonElement, ButtonProps> = (
     disabled,
     onClick,
     icon,
+    iconPosition = "start",
     loading,
     loadingText,
     ...props
@@ -62,8 +66,9 @@ const Button: React.ForwardRefRenderFunction<HTMLButtonElement, ButtonProps> = (
         loadingText
       ) : (
         <>
-          {icon}
+          {iconPosition === "start" && icon}
           {children}
+          {iconPosition === "end" && icon}
         </>
       )}
     </button>
