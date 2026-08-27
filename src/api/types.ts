@@ -3,7 +3,12 @@ import type { Role } from "@/utils/permissions";
 export type AuthUser = {
   id: string;
   name: string;
-  email: string;
+  // email: string;
+  /**
+   * Depende de `serializeUser` (AuthController) passar a devolver o campo —
+   * é o que alimenta o resumo da conta de quem não pode chamar `/api/users`.
+   */
+  telegramUser?: string | null;
   /** Login completo, `usuario@tenant` — é daqui que sai o slug do tenant. */
   account?: string;
   /** Define a máscara de permissões da sessão (ver `@/utils/permissions`). */
@@ -159,9 +164,9 @@ export type User = {
   /** Login completo, já com o sufixo `@tenant`. */
   account: string;
   name: string;
-  email: string | null;
-  /** Máscara própria do backend; o front deriva as permissões do `role`. */
-  permissions: number | null;
+  // email: string | null;
+  telegramUser: string | null;
+  permissions: string | null;
   role: Role;
   createdAt?: string;
 };
@@ -173,7 +178,8 @@ export type UserPayload = {
    */
   account?: string;
   name: string;
-  email?: string | null;
+  // email?: string | null;
+  telegramUser?: string | null;
   role: Role;
   /** Obrigatória no cadastro; na edição, só quando for trocar. */
   password?: string;

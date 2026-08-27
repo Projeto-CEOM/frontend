@@ -90,7 +90,7 @@ const Select: React.ForwardRefRenderFunction<HTMLButtonElement, SelectProps> = (
           aria-required={required}
           onClick={() => setIsOpen((current) => !current)}
           className={cn(
-            "flex w-full items-center rounded-lg border bg-surface/60 py-2.5 text-left text-sm text-ink outline-none backdrop-blur-sm transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50",
+            "flex w-full items-center rounded-lg border bg-surface/60 py-2.5 text-left text-sm text-ink outline-none backdrop-blur-sm transition-colors focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:opacity-50",
             Icon ? "pl-9" : "pl-3",
             selectedOption && !disabled ? "pr-16" : "pr-9",
             error ? "border-danger/40" : "border-border",

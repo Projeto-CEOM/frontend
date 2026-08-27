@@ -1,14 +1,28 @@
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { AtSign, KeyRound, Mail, Save, ShieldCheck, User as UserIcon } from "lucide-react";
+import {
+  AtSign,
+  KeyRound,
+  Save,
+  Send,
+  ShieldCheck,
+  User as UserIcon,
+} from "lucide-react";
 import { useCreateUser, useUpdateUser, useUser } from "@/api/queries/useUsers";
+import type { User } from "@/api/users";
 import RecordForm, {
   type RecordFormField,
 } from "@/components/common/RecordForm";
 import { usePermissions } from "@/hooks/UsePermissions";
 import { useAuth } from "@/hooks/UseAuth";
-import { ROLE_LABELS, canManageRole, manageableRoles } from "@/utils/permissions";
+import { useAppDispatch } from "@/store/hooks";
+import { sessionUserUpdated } from "@/store/slices/authSlice";
+import {
+  ROLE_LABELS,
+  canManageRole,
+  manageableRoles,
+} from "@/utils/permissions";
 import {
   MIN_PASSWORD_LENGTH,
   accountTenant,
@@ -22,9 +36,21 @@ type UserFormProps = {
   userId: string | null;
   onCancel: () => void;
   onSaved: () => void;
+  title?: string;
+  cancelLabel?: string;
+  notice?: React.ReactNode;
+  onResult?: (status: "success" | "error") => void;
 };
 
-const UserForm: React.FC<UserFormProps> = ({ userId, onCancel, onSaved }) => {
+const UserForm: React.FC<UserFormProps> = ({
+  userId,
+  onCancel,
+  onSaved,
+  title,
+  cancelLabel,
+  notice,
+  onResult,
+}) => {
   const isEditing = Boolean(userId);
   const { data: user, isLoading } = useUser(userId);
   const createUser = useCreateUser();
@@ -32,13 +58,12 @@ const UserForm: React.FC<UserFormProps> = ({ userId, onCancel, onSaved }) => {
 
   const { role: actorRole } = usePermissions();
   const { user: sessionUser } = useAuth();
+  const dispatch = useAppDispatch();
 
-  const isSelfEdit =
-    isEditing && String(userId) === String(sessionUser?.id);
+  const isSelfEdit = isEditing && String(userId) === String(sessionUser?.id);
 
   const allowedRoles = useMemo(
-    () =>
-      isSelfEdit && actorRole ? [actorRole] : manageableRoles(actorRole),
+    () => (isSelfEdit && actorRole ? [actorRole] : manageableRoles(actorRole)),
     [isSelfEdit, actorRole],
   );
 
@@ -69,10 +94,26 @@ const UserForm: React.FC<UserFormProps> = ({ userId, onCancel, onSaved }) => {
   if (blocked) return null;
 
   const handleSubmit = (values: UserFormValues) => {
+    const settle = {
+      onSuccess: (saved: User) => {
+        if (isSelfEdit) {
+          dispatch(
+            sessionUserUpdated({
+              name: saved.name,
+              telegramUser: saved.telegramUser,
+            }),
+          );
+        }
+
+        onResult?.("success");
+      },
+      onError: () => onResult?.("error"),
+    };
+
     if (userId) {
-      updateUser.mutate({ id: userId, payload: values });
+      updateUser.mutate({ id: userId, payload: values }, settle);
     } else {
-      createUser.mutate(values);
+      createUser.mutate(values, settle);
     }
 
     onSaved();
@@ -104,12 +145,19 @@ const UserForm: React.FC<UserFormProps> = ({ userId, onCancel, onSaved }) => {
       placeholder: "Ex: João da Silva",
       required: true,
     },
+    // {
+    //   name: "email",
+    //   label: "E-mail",
+    //   type: "email",
+    //   icon: Mail,
+    //   placeholder: "opcional",
+    //   required: false,
+    // },
     {
-      name: "email",
-      label: "E-mail",
-      type: "email",
-      icon: Mail,
-      placeholder: "opcional",
+      name: "telegramUser",
+      label: "Telegram",
+      icon: Send,
+      placeholder: "opcional — ex: @joao",
       required: false,
     },
     {
@@ -137,22 +185,26 @@ const UserForm: React.FC<UserFormProps> = ({ userId, onCancel, onSaved }) => {
   return (
     <RecordForm
       title={
-        isSelfEdit
+        title ??
+        (isSelfEdit
           ? "Editar minha conta"
           : isEditing
             ? "Editar usuário"
-            : "Cadastrar usuário"
+            : "Cadastrar usuário")
       }
       subtitle={
         isSelfEdit
-          ? "Você pode alterar nome, e-mail e senha. O papel só muda por outra conta acima da sua."
+          ? `Login ${user?.account ?? ""} — você altera nome, e-mail e senha. O papel só muda por uma conta acima da sua.`
           : isEditing && user
             ? `Login ${user.account} — o login não pode ser alterado.`
             : "O login recebe o sufixo do tenant automaticamente."
       }
+      cancelLabel={cancelLabel}
+      notice={notice}
       form={form}
       fields={fields}
       isLoading={isEditing && isLoading}
+      isSubmitting={updateUser.isPending || createUser.isPending}
       submitLabel={isEditing ? "Salvar alterações" : "Salvar usuário"}
       submitIcon={<Save size={16} strokeWidth={1.8} />}
       onSubmit={handleSubmit}

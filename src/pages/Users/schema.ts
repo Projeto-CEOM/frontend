@@ -7,6 +7,8 @@ const ACCOUNT_PATTERN = /^[a-z0-9._-]{2,}$/;
 
 export const MIN_PASSWORD_LENGTH = 6;
 
+export const TELEGRAM_MAX_LENGTH = 100;
+
 type UserSchemaOptions = {
   isEditing: boolean;
   allowedRoles: readonly Role[];
@@ -33,7 +35,13 @@ export const makeUserSchema = ({
           isEditing || !value?.trim() || ACCOUNT_PATTERN.test(value.trim()),
       ),
     name: yup.string().label("Nome").trim().required().max(120),
-    email: yup.string().label("E-mail").trim().email().optional(),
+    // email: yup.string().label("E-mail").trim().email().optional(),
+    telegramUser: yup
+      .string()
+      .label("Telegram")
+      .trim()
+      .optional()
+      .max(TELEGRAM_MAX_LENGTH),
     role: yup
       .mixed<Role>()
       .label("Papel")
@@ -59,7 +67,8 @@ export type UserFormValues = yup.InferType<ReturnType<typeof makeUserSchema>>;
 export const emptyUserValues: DefaultValues<UserFormValues> = {
   account: "",
   name: "",
-  email: "",
+  // email: "",
+  telegramUser: "",
   role: "viewer",
   password: "",
 };
@@ -75,7 +84,8 @@ export const userToFormValues = (
 ): DefaultValues<UserFormValues> => ({
   account: accountLocalPart(user.account),
   name: user.name,
-  email: user.email ?? "",
+  // email: user.email ?? "",
+  telegramUser: user.telegramUser ?? "",
   role: user.role,
   password: "",
 });

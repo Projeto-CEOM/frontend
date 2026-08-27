@@ -53,6 +53,7 @@ type RecordFormProps<T extends FieldValues> = {
   onCancel: () => void;
   /** Erro vindo da API (os erros de validação saem do próprio schema). */
   error?: string;
+  notice?: ReactNode;
   isSubmitting?: boolean;
   isLoading?: boolean;
   submitLabel: string;
@@ -69,6 +70,7 @@ const RecordForm = <T extends FieldValues>({
   onSubmit,
   onCancel,
   error,
+  notice,
   isSubmitting,
   isLoading,
   submitLabel,
@@ -178,6 +180,8 @@ const RecordForm = <T extends FieldValues>({
 
       <h1 className="text-2xl font-semibold text-ink">{title}</h1>
       {subtitle && <p className="mt-1 text-sm text-ink-soft">{subtitle}</p>}
+
+      {notice}
 
       {isLoading ? (
         <div className="mt-6 rounded-2xl border border-border bg-surface p-6 shadow-sm md:p-8">

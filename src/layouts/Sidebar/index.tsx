@@ -93,7 +93,7 @@ const Sidebar: React.FC = () => {
 
       <button
         type="button"
-        title={user?.email}
+        title={user?.account}
         className={cn(
           "mx-3 mb-12 flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5 ",
           collapsed && "justify-center px-0",
@@ -109,7 +109,7 @@ const Sidebar: React.FC = () => {
                 {user?.name}
               </span>
               <span className="block truncate text-left text-xs text-ink-faint">
-                {user?.email ?? "Conta"}
+                {user?.account ?? "Conta"}
               </span>
             </span>
           </>
@@ -140,17 +140,23 @@ const Sidebar: React.FC = () => {
       </nav>
 
       <div className="flex flex-col gap-1 border-t border-border p-3">
-        <button
-          type="button"
+        <NavLink
+          to="/configuracoes"
           title={collapsed ? "Configurações" : undefined}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-hover md:flex",
-            collapsed && "justify-center px-0",
-          )}
+          onClick={() => dispatch(mobileNavClosed())}
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              collapsed && "justify-center px-0",
+              isActive
+                ? "bg-primary/10 text-primary"
+                : "text-ink-soft hover:bg-surface-hover",
+            )
+          }
         >
           <Settings size={17} strokeWidth={1.8} className="shrink-0" />
           {!collapsed && "Configurações"}
-        </button>
+        </NavLink>
 
         <button
           type="button"

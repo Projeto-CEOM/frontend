@@ -121,12 +121,20 @@ const Users: React.FC = () => {
       width: "25%",
       render: (user) => <span className="text-ink-soft">{user.name}</span>,
     },
+    // {
+    //   header: "E-mail",
+    //   align: "center",
+    //   width: "25%",
+    //   render: (user) => (
+    //     <span className="text-ink-soft">{user.email || "—"}</span>
+    //   ),
+    // },
     {
-      header: "E-mail",
+      header: "Telegram",
       align: "center",
       width: "25%",
       render: (user) => (
-        <span className="text-ink-soft">{user.email || "—"}</span>
+        <span className="text-ink-soft">{user.telegramUser || "—"}</span>
       ),
     },
     {

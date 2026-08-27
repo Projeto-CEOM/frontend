@@ -8,8 +8,8 @@ const item = (id: string) => `/api/users/${id}`;
  * O formulário e a API divergem em dois pontos, e a tradução fica isolada aqui
  * (mesmo padrão de `sensors.ts`):
  *
- * - `email` vazio precisa ir como `null`, senão o backend grava string vazia e
- *   estoura o índice único no segundo usuário sem e-mail;
+ * - `telegramUser` vazio vai como `null`, para o backend não gravar string
+ *   vazia num campo que é opcional;
  * - `password` em branco na edição significa "manter a atual" — mandar `""`
  *   levaria o 400 de senha curta.
  *
@@ -20,7 +20,10 @@ const toRequestBody = (payload: UserPayload, isUpdate: boolean) => {
   const body: Record<string, unknown> = {
     name: payload.name,
     role: payload.role,
-    email: payload.email?.trim() ? payload.email.trim() : null,
+    // email: payload.email?.trim() ? payload.email.trim() : null,
+    telegramUser: payload.telegramUser?.trim()
+      ? payload.telegramUser.trim()
+      : null,
   };
 
   if (!isUpdate) body.account = payload.account?.trim().toLowerCase() ?? "";

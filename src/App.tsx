@@ -9,6 +9,7 @@ import Sensors from "@/pages/Sensors";
 import Alerts from "@/pages/Alerts";
 import Channels from "@/pages/Channels";
 import Users from "@/pages/Users";
+import Account from "@/pages/Account";
 import AppShell from "@/layouts/AppShell";
 
 const App: React.FC = () => {
@@ -30,6 +31,8 @@ const App: React.FC = () => {
             <Route element={<RequirePermission permission="users" />}>
               <Route path="/usuarios" element={<Users />} />
             </Route>
+
+            <Route path="/configuracoes" element={<Account />} />
           </Route>
         </Route>
 

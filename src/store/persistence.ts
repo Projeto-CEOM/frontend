@@ -3,6 +3,7 @@ import { setAuthToken } from "@/api/client";
 import {
   sessionEnded,
   sessionStarted,
+  sessionUserUpdated,
   type AuthState,
 } from "./slices/authSlice";
 import {
@@ -55,7 +56,7 @@ export const loadPersistedState = (): {
 export const persistenceListener = createListenerMiddleware();
 
 persistenceListener.startListening({
-  matcher: isAnyOf(sessionStarted, sessionEnded),
+  matcher: isAnyOf(sessionStarted, sessionUserUpdated, sessionEnded),
   effect: (_action, api) => {
     const { auth } = api.getState() as RootState;
 

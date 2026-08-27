@@ -14,9 +14,10 @@ const userQueries = createCrudQueries<User, UserPayload>({
   // A senha não pertence à entidade e não pode encostar no cache; `account`
   // sai do payload sem o `@tenant`, então na linha otimista fica de fora e
   // espera o `onSettled` trazer o valor real do servidor.
-  toOptimistic: ({ name, email, role }) => ({
+  toOptimistic: ({ name, telegramUser, role }) => ({
     name,
-    email: email?.trim() ? email.trim() : null,
+    // email: email?.trim() ? email.trim() : null,
+    telegramUser: telegramUser?.trim() ? telegramUser.trim() : null,
     role,
   }),
 });

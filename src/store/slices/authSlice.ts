@@ -20,6 +20,10 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
     },
+    sessionUserUpdated: (state, action: PayloadAction<Partial<AuthUser>>) => {
+      if (!state.user) return;
+      state.user = { ...state.user, ...action.payload };
+    },
     sessionEnded: (state) => {
       state.user = null;
       state.token = null;
@@ -37,7 +41,8 @@ const authSlice = createSlice({
   },
 });
 
-export const { sessionStarted, sessionEnded } = authSlice.actions;
+export const { sessionStarted, sessionUserUpdated, sessionEnded } =
+  authSlice.actions;
 export const {
   selectUser,
   selectToken,
