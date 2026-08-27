@@ -45,7 +45,7 @@ const Users: React.FC = () => {
   const canManage = (user: User) =>
     !isSelf(user) && canManageRole(actorRole, user.role);
 
-  const canEdit = (user: User) => (isSelf(user) || canManage(user)) && can("u");
+  const canEdit = (user: User) => canManage(user) && can("u");
   const canDelete = (user: User) => canManage(user) && can("d");
 
   const openForm = (user?: User) => {

@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   UsersRound,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useAuth } from "@/hooks/UseAuth";
@@ -94,7 +95,7 @@ const Sidebar: React.FC = () => {
         type="button"
         title={user?.email}
         className={cn(
-          "mx-3 mb-12 flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5 hover:bg-primary-hover/10",
+          "mx-3 mb-12 flex items-center gap-2.5 rounded-xl border border-border px-3 py-2.5 ",
           collapsed && "justify-center px-0",
         )}
       >
@@ -111,11 +112,6 @@ const Sidebar: React.FC = () => {
                 {user?.email ?? "Conta"}
               </span>
             </span>
-            <ChevronDown
-              size={16}
-              strokeWidth={1.8}
-              className="shrink-0 text-ink-faint"
-            />
           </>
         )}
       </button>
@@ -146,10 +142,22 @@ const Sidebar: React.FC = () => {
       <div className="flex flex-col gap-1 border-t border-border p-3">
         <button
           type="button"
+          title={collapsed ? "Configurações" : undefined}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-hover md:flex",
+            collapsed && "justify-center px-0",
+          )}
+        >
+          <Settings size={17} strokeWidth={1.8} className="shrink-0" />
+          {!collapsed && "Configurações"}
+        </button>
+
+        <button
+          type="button"
           onClick={() => dispatch(sidebarToggled())}
           title={collapsed ? "Expandir menu" : "Recolher menu"}
           className={cn(
-            "hidden items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-hover md:flex",
+            "hidden items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-surface-hover md:flex overflow-hidden whitespace-nowrap text-ellipsis",
             collapsed && "justify-center px-0",
           )}
         >
