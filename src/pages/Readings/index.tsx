@@ -45,10 +45,6 @@ const Readings: React.FC = () => {
 
   const handleSaved = closeForm;
 
-  // useEffect(() => {
-  //     if (isFormOpen) closeForm();
-  // }, [isFormOpen]);
-
   if (isFormOpen) {
     return <ReadingsForm onCancel={closeForm} onSaved={handleSaved} />;
   }

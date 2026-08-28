@@ -14,6 +14,7 @@ import {
   readingsSchema,
   type ReadingsFormValues,
 } from "./schema";
+import { useSearchParams } from "react-router-dom";
 
 type ReadingsFormProps = {
   sensorId: string | null;
@@ -31,6 +32,7 @@ const ReadingsForm: React.FC<ReadingsFormProps> = ({
   onCancel,
   onSaved,
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: sensorsPage } = useSensors({ page: 1, pageSize: 200 });
   const sensors = sensorsPage?.data ?? [];
   // Todas as salas para o select — ver ROOM_LOOKUP_PARAMS na listagem.
@@ -44,14 +46,38 @@ const ReadingsForm: React.FC<ReadingsFormProps> = ({
 
   const { reset, setValue } = form;
 
-  // useEffect(() => {
-  //   if (sensor) reset(sensorToFormValues(sensor));
-  // }, [sensor, reset]);
+  useEffect(() => {
+    const params = Object.fromEntries(searchParams.entries());
+    Object.keys(params).forEach((key) => {
+      if (["sensorId", "roomId", "from", "to"].includes(key)) {
+        if (key == "from" || key == "to") {
+          setValue(key, String(params[key]).slice(0, 10))
+        } else {
+          setValue(key, params[key])
+        }
+      }
+    })
+
+  }, [searchParams]);
 
   const handleSubmit = (values: ReadingsFormValues) => {
-    console.log(values);
+    const next = new URLSearchParams(searchParams);
 
-    onSaved();
+    Object.keys(values).forEach((key) => {
+      if (String(values[key] != "")) {
+        if (key == "from" || key == "to") {
+          const date = new Date(values[key])
+          next.set(key, date.toISOString());
+        } else {
+          next.set(key, String(values[key]));
+        }
+      } else {
+        next.delete(key)
+      }
+    })
+    next.delete("filtragem");
+    setSearchParams(next);
+    // onSaved();
   };
 
   const fields: RecordFormField<ReadingsFormValues>[] = [
@@ -72,32 +98,23 @@ const ReadingsForm: React.FC<ReadingsFormProps> = ({
       required: false,
     },
     {
-      groupLabel: "Janela temporal",
+      groupLabel: "Intervalo",
       fields: [
         {
-          name: "dateMin",
+          name: "from",
           type: "date",
           step: "0.1",
           placeholder: "Início",
           required: false,
         },
         {
-          name: "dateMax",
+          name: "to",
           type: "date",
           step: "0.1",
           placeholder: "Fim",
           required: false,
         },
       ],
-    },
-    {
-      name: "limit",
-      label: "Limite de exibiçao",
-      type: "number",
-      step: "1",
-      icon: List,
-      placeholder: "Ex: 15",
-      required: false,
     },
   ];
 
