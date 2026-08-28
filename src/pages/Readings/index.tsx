@@ -20,6 +20,7 @@ const Readings: React.FC = () => {
   const { data, isLoading, isError, error } = useReadings({
     page,
     pageSize: PAGE_SIZE,
+    filters: Object.fromEntries(searchParams.entries()),
   });
   const readings = data?.data ?? [];
   const meta = data?.meta;
@@ -49,12 +50,7 @@ const Readings: React.FC = () => {
   // }, [isFormOpen]);
 
   if (isFormOpen) {
-    return (
-      <ReadingsForm
-        onCancel={closeForm}
-        onSaved={handleSaved}
-      />
-    );
+    return <ReadingsForm onCancel={closeForm} onSaved={handleSaved} />;
   }
 
   const columns: DataTableColumn<Reading>[] = [
@@ -64,9 +60,9 @@ const Readings: React.FC = () => {
       width: "25%",
       render: (reading) => (
         <span className="font-medium text-ink">
-          {reading?.recordedAt ?
-            new Date(reading.recordedAt).toLocaleString(undefined) :
-            "-"}
+          {reading?.recordedAt
+            ? new Date(reading.recordedAt).toLocaleString(undefined)
+            : "-"}
         </span>
       ),
     },
@@ -76,8 +72,7 @@ const Readings: React.FC = () => {
       width: "25%",
       render: (reading) => (
         <span className="text-ink-soft">
-          {reading.roomName ??
-            "Sala removida"}
+          {reading.roomName ?? "Sala removida"}
         </span>
       ),
     },
@@ -87,8 +82,7 @@ const Readings: React.FC = () => {
       width: "25%",
       render: (reading) => (
         <span className="text-ink-soft">
-          {reading.sensorIdentifier ??
-            "Sala removida"}
+          {reading.sensorIdentifier ?? "Sala removida"}
         </span>
       ),
     },
@@ -97,9 +91,7 @@ const Readings: React.FC = () => {
       align: "center",
       width: "15%",
       render: (reading) => (
-        <span className="text-ink-soft">
-          {reading.tempValue + "°C"}
-        </span>
+        <span className="text-ink-soft">{reading.tempValue + "°C"}</span>
       ),
     },
     {
@@ -107,9 +99,7 @@ const Readings: React.FC = () => {
       align: "center",
       width: "15%",
       render: (reading) => (
-        <span className="text-ink-soft">
-          {reading.humValue + "%"}
-        </span>
+        <span className="text-ink-soft">{reading.humValue + "%"}</span>
       ),
     },
   ];

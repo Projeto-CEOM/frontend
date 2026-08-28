@@ -60,7 +60,7 @@ export type Reading = {
   tempValue: number;
   humValue: number;
   co2Value?: number;
-  sensorIdentifier: string
+  sensorIdentifier: string;
   roomName: string;
   recordedAt?: string;
 };
@@ -89,6 +89,7 @@ export type ListParams = {
   pageSize?: number;
   sortBy?: string;
   sortOrder?: SortOrder;
+  filters?: { [k: string]: string };
 };
 
 /**
