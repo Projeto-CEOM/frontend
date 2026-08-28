@@ -64,7 +64,6 @@ persistenceListener.startListening({
     if (auth.token && auth.user) {
       write(AUTH_KEY, {
         ...auth,
-        user: { ...auth.user, role: import.meta.env.VITE_DEFAULT_ROLE },
       });
     } else {
       localStorage.removeItem(AUTH_KEY);

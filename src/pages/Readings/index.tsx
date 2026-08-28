@@ -3,6 +3,9 @@ import Button from "@/components/common/Button";
 import DataTable, { DataTableColumn } from "@/components/common/DataTable";
 import { useSearchParams } from "react-router-dom";
 import { useReadings } from "@/api/queries/useReadings";
+import { Search } from "lucide-react";
+import ReadingsForm from "./ReadingsForm";
+import { useEffect } from "react";
 
 const PAGE_SIZE = 15;
 
@@ -11,12 +14,48 @@ const Readings: React.FC = () => {
   const pageParam = Number(searchParams.get("page"));
   const page = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
 
+  const formParam = searchParams.get("filtragem");
+  const isFormOpen = formParam !== null;
+
   const { data, isLoading, isError, error } = useReadings({
     page,
     pageSize: PAGE_SIZE,
   });
   const readings = data?.data ?? [];
   const meta = data?.meta;
+
+  const openForm = () => {
+    const next = new URLSearchParams(searchParams);
+    next.set("filtragem", "");
+    setSearchParams(next);
+  };
+
+  const closeForm = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("filtragem");
+    setSearchParams(next);
+  };
+
+  const goToPage = (nextPage: number) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("page", String(nextPage));
+    setSearchParams(next);
+  };
+
+  const handleSaved = closeForm;
+
+  // useEffect(() => {
+  //     if (isFormOpen) closeForm();
+  // }, [isFormOpen]);
+
+  if (isFormOpen) {
+    return (
+      <ReadingsForm
+        onCancel={closeForm}
+        onSaved={handleSaved}
+      />
+    );
+  }
 
   const columns: DataTableColumn<Reading>[] = [
     {
@@ -75,12 +114,6 @@ const Readings: React.FC = () => {
     },
   ];
 
-  const goToPage = (nextPage: number) => {
-    const next = new URLSearchParams(searchParams);
-    next.set("page", String(nextPage));
-    setSearchParams(next);
-  };
-
   return (
     <div className="px-6 py-10 md:px-10">
       <div className="flex items-center justify-between">
@@ -91,6 +124,12 @@ const Readings: React.FC = () => {
           </p>
         </div>
 
+        <Button
+          icon={<Search size={16} strokeWidth={1.8} />}
+          onClick={() => openForm()}
+        >
+          Filtrar
+        </Button>
       </div>
 
       {/* {isError && sensors.length === 0 && (
@@ -108,7 +147,7 @@ const Readings: React.FC = () => {
           pagination={meta}
           isLoading={isLoading}
           skeletonRows={Math.min(PAGE_SIZE, 5)}
-          emptyMessage="Nenhuma leitura cadastrada ainda."
+          emptyMessage="Nenhuma leitura cadastrada no momento."
         />
       </div>
     </div>
