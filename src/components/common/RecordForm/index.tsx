@@ -16,7 +16,7 @@ export type RecordFormInputField<T extends FieldValues> = {
   /** Caminho do campo no schema — as mensagens vêm do resolver (yup pt-BR). */
   name: Path<T>;
   label?: string;
-  type?: "text" | "email" | "password" | "number" | "textarea" | "select";
+  type?: "text" | "email" | "password" | "number" | "textarea" | "select" | "date";
   icon?: LucideIcon;
   placeholder?: string;
   rows?: number;

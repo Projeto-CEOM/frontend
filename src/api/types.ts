@@ -86,6 +86,7 @@ export type ListParams = {
   pageSize?: number;
   sortBy?: string;
   sortOrder?: SortOrder;
+  filters?: { [k: string]: string };
 };
 
 /**

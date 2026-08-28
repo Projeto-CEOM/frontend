@@ -14,6 +14,7 @@ import {
   PanelLeftOpen,
   UsersRound,
   Settings,
+  List,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { useAuth } from "@/hooks/UseAuth";
@@ -36,8 +37,9 @@ const NAV_ITEMS: {
 }[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/alertas", label: "Alertas", icon: TriangleAlert },
-  { to: "/salas", label: "Salas", icon: DoorOpen },
+  { to: "/leituras", label: "Leituras", icon: List },
   { to: "/sensores", label: "Sensores", icon: CircuitBoard },
+  { to: "/salas", label: "Salas", icon: DoorOpen },
   { to: "/canais", label: "Canais", icon: Send },
   { to: "/relatorios", label: "Relatórios", icon: FileText },
   { to: "/usuarios", label: "Usuários", icon: UsersRound, permission: "users" },

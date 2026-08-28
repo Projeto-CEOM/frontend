@@ -63,7 +63,9 @@ persistenceListener.startListening({
     setAuthToken(auth.token);
 
     if (auth.token && auth.user) {
-      write(AUTH_KEY, auth);
+      write(AUTH_KEY, {
+        ...auth,
+      });
     } else {
       localStorage.removeItem(AUTH_KEY);
     }

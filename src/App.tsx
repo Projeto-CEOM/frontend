@@ -10,6 +10,7 @@ import Alerts from "@/pages/Alerts";
 import Channels from "@/pages/Channels";
 import Users from "@/pages/Users";
 import Account from "@/pages/Account";
+import Readings from "@/pages/Readings";
 import AppShell from "@/layouts/AppShell";
 
 const App: React.FC = () => {
@@ -26,6 +27,8 @@ const App: React.FC = () => {
               <Route path="/sensores" element={<Sensors />} />
               <Route path="/alertas" element={<Alerts />} />
               <Route path="/canais" element={<Channels />} />
+
+              <Route path="/leituras" element={<Readings />} />
             </Route>
 
             <Route element={<RequirePermission permission="users" />}>

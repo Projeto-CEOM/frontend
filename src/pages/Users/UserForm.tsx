@@ -194,7 +194,7 @@ const UserForm: React.FC<UserFormProps> = ({
       }
       subtitle={
         isSelfEdit
-          ? `Login ${user?.account ?? ""} — você altera nome, e-mail e senha. O papel só muda por uma conta acima da sua.`
+          ? `Login ${user?.account ?? ""} — você altera nome, Telegram e senha. O papel só muda por uma conta acima da sua.`
           : isEditing && user
             ? `Login ${user.account} — o login não pode ser alterado.`
             : "O login recebe o sufixo do tenant automaticamente."

@@ -8,15 +8,6 @@ const NOTICE_TIMEOUT_MS = 6000;
 
 type SaveStatus = "idle" | "success" | "error";
 
-/**
- * Auto-serviço da própria conta, aberto a qualquer papel.
- *
- * A versão somente-leitura para editor/viewer deixou de existir quando o
- * backend passou a liberar `GET`/`PUT` de `/users/:id` para o próprio dono do
- * token (`allowSelfOrRole`). Por isso aqui não há mais checagem de permissão:
- * quem gerencia terceiros é a tela de Usuários, que continua atrás do bit
- * `users`.
- */
 const Account: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();

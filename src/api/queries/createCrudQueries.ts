@@ -232,7 +232,10 @@ export const createCrudQueries = <
 
           return {
             data,
-            meta: { ...page.meta, total: Math.max(0, page.meta.total - removed) },
+            meta: {
+              ...page.meta,
+              total: Math.max(0, page.meta.total - removed),
+            },
           };
         });
 
