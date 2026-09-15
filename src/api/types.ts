@@ -146,6 +146,54 @@ export type ReadingListParams = ListParams & {
   to?: string;
 };
 
+export type ReadingGranularity = "hour" | "day";
+
+export type ReadingSummary = {
+  sensorId: string | null;
+  sensorIdentifier: string | null;
+  roomId: string | null;
+  roomName: string | null;
+  periodStart: string;
+
+  tempCount: number;
+  tempSum: number | null;
+  tempSumSq: number | null;
+  tempMin: number | null;
+  tempMax: number | null;
+  avgTemp: number | null;
+
+  humCount: number;
+  humSum: number | null;
+  humSumSq: number | null;
+  humMin: number | null;
+  humMax: number | null;
+  avgHum: number | null;
+
+  readingsCount: number;
+};
+
+export type ReadingSummaryMeta = {
+  granularity: ReadingGranularity;
+  timezone: string;
+  from: string;
+  to: string;
+  buckets: number;
+};
+
+export type ReadingSummaryResponse = {
+  data: ReadingSummary[];
+  meta: ReadingSummaryMeta;
+};
+
+export type ReadingSummaryParams = {
+  from?: string;
+  to?: string;
+  roomId?: string;
+  sensorId?: string;
+  granularity?: ReadingGranularity | "auto";
+  timezone?: string;
+};
+
 export type Channel = {
   id: string;
   telegramId: string;

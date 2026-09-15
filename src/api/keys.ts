@@ -1,11 +1,15 @@
 import type {
   AlertListParams,
   ListParams,
-  ReadingListParams,
+  ReadingSummaryParams,
   UserListParams,
 } from "./types";
 
 export const queryKeys = {
+  auth: {
+    all: ["auth"] as const,
+    me: () => [...queryKeys.auth.all, "me"] as const,
+  },
   rooms: {
     all: ["rooms"] as const,
     lists: () => [...queryKeys.rooms.all, "list"] as const,
@@ -47,5 +51,7 @@ export const queryKeys = {
     list: (params?: ListParams) =>
       [...queryKeys.readings.lists(), params ?? {}] as const,
     detail: (id: string) => [...queryKeys.readings.all, "detail", id] as const,
+    summary: (params?: ReadingSummaryParams) =>
+      [...queryKeys.readings.all, "summary", params ?? {}] as const,
   },
 };

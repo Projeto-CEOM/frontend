@@ -20,7 +20,6 @@ import { isAlertViolation } from "@/utils/format";
 import LiveStatus from "./LiveStatus";
 import RecentAlertsList from "./RecentAlertsList";
 import RoomStatusGrid from "./RoomStatusGrid";
-import CurrentReading from "./CurrentReading";
 import SensorHealthList from "./SensorHealthList";
 import SeriesTable from "./SeriesTable";
 import {
@@ -38,7 +37,6 @@ import {
   buildSeries,
   formatMeasure,
   isPeriodKey,
-  latestReading,
   MEASURE_KEYS,
   MEASURES,
   PERIOD_KEYS,
@@ -169,11 +167,6 @@ const Dashboard: React.FC = () => {
       day: "2-digit",
       month: "2-digit",
     });
-
-  const currentReading = latestReading(readings);
-  const currentSensor = currentReading
-    ? sensorById.get(currentReading.sensorId)
-    : undefined;
 
   const violations = alerts.filter((alert) =>
     isAlertViolation(alert.alertType),
@@ -654,15 +647,6 @@ const Dashboard: React.FC = () => {
                 Limpar filtros
               </Button>
             )}
-          </div>
-
-          <div className="border-t border-border p-4">
-            <CurrentReading
-              reading={currentReading}
-              sensor={currentSensor}
-              now={now}
-              isLoading={isLoadingReadings}
-            />
           </div>
         </div>
 

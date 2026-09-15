@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../keys";
 import { readingsApi } from "../readings";
-import type { ReadingListParams } from "../types";
+import type { ReadingListParams, ReadingSummaryParams } from "../types";
 
 export const READINGS_MAX_PAGE_SIZE = 1000;
 
@@ -29,4 +29,14 @@ export const useReadings = (params?: ReadingListParams) =>
 
       return sameScope(previousParams, params) ? previous : undefined;
     },
+  });
+
+export const useReadingsSummary = (
+  params: ReadingSummaryParams,
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: queryKeys.readings.summary(params),
+    queryFn: () => readingsApi.summary(params),
+    enabled,
   });

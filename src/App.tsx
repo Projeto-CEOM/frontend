@@ -11,6 +11,7 @@ import Channels from "@/pages/Channels";
 import Users from "@/pages/Users";
 import Account from "@/pages/Account";
 import Readings from "@/pages/Readings";
+import Reports from "@/pages/Reports";
 import AppShell from "@/layouts/AppShell";
 
 const App: React.FC = () => {
@@ -29,6 +30,7 @@ const App: React.FC = () => {
               <Route path="/canais" element={<Channels />} />
 
               <Route path="/leituras" element={<Readings />} />
+              <Route path="/relatorios" element={<Reports />} />
             </Route>
 
             <Route element={<RequirePermission permission="users" />}>
