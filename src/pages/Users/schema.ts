@@ -6,8 +6,8 @@ import type { Role } from "@/utils/permissions";
 const ACCOUNT_PATTERN = /^[a-z0-9._-]{2,}$/;
 
 export const MIN_PASSWORD_LENGTH = 6;
-
 export const TELEGRAM_MAX_LENGTH = 100;
+export const PHONE_MAX_LENGTH = 20;
 
 type UserSchemaOptions = {
   isEditing: boolean;
@@ -36,12 +36,18 @@ export const makeUserSchema = ({
       ),
     name: yup.string().label("Nome").trim().required().max(120),
     // email: yup.string().label("E-mail").trim().email().optional(),
-    telegramUser: yup
+    // telegramUser: yup
+    //   .string()
+    //   .label("Telegram")
+    //   .trim()
+    //   .optional()
+    //   .max(TELEGRAM_MAX_LENGTH),
+    phone: yup
       .string()
-      .label("Telegram")
+      .label("Telefone")
       .trim()
       .optional()
-      .max(TELEGRAM_MAX_LENGTH),
+      .max(PHONE_MAX_LENGTH),
     role: yup
       .mixed<Role>()
       .label("Papel")
@@ -68,7 +74,8 @@ export const emptyUserValues: DefaultValues<UserFormValues> = {
   account: "",
   name: "",
   // email: "",
-  telegramUser: "",
+  // telegramUser: "",
+  phone: "",
   role: "viewer",
   password: "",
 };
@@ -85,7 +92,8 @@ export const userToFormValues = (
   account: accountLocalPart(user.account),
   name: user.name,
   // email: user.email ?? "",
-  telegramUser: user.telegramUser ?? "",
+  // telegramUser: user.telegramUser ?? "",
+  phone: user.phone ?? "",
   role: user.role,
   password: "",
 });
