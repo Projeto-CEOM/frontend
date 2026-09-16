@@ -1,23 +1,30 @@
-import type { DefaultValues } from "react-hook-form";
 import { yup } from "@/utils/validation";
-import type { Channel } from "@/api/channels";
-
+import type { DefaultValues } from "react-hook-form";
+import type { Channel } from "@/api/types";
 
 export const channelSchema = yup.object({
-  telegramId: yup.string().label("ID do Telegram").trim().required().max(100, "Limite máximo de 100 caracteres"),
-  name: yup.string().label("Nome do Canal").trim().optional().max(100, "Limite máximo de 100 caracteres"),
+  name: yup
+    .string()
+    .label("Nome do Canal")
+    .trim()
+    .required("O nome do canal é obrigatório")
+    .max(100),
+  roomIds: yup
+    .array()
+    .of(yup.string().required())
+    .default([]),
 });
 
 export type ChannelFormValues = yup.InferType<typeof channelSchema>;
 
 export const emptyChannelValues: DefaultValues<ChannelFormValues> = {
-  telegramId: "",
   name: "",
+  roomIds: [],
 };
 
 export const channelToFormValues = (
   channel: Channel,
 ): DefaultValues<ChannelFormValues> => ({
-  telegramId: channel.telegramId,
-  name: channel.name ?? "", 
+  name: channel.name ?? "",
+  roomIds: channel.rooms?.map((r) => r.id) || [],
 });
