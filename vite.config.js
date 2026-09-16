@@ -18,5 +18,8 @@ export default defineConfig(({ mode }) => {
     server: {
       port: parseInt(env.PORT) || 3000,
     },
+    preview: {
+      allowedHosts: true,
+    },
   };
 });
