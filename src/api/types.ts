@@ -8,7 +8,8 @@ export type AuthUser = {
    * Depende de `serializeUser` (AuthController) passar a devolver o campo —
    * é o que alimenta o resumo da conta de quem não pode chamar `/api/users`.
    */
-  telegramUser?: string | null;
+  phone?: string | null
+  // telegramUser?: string | null;
   /** Login completo, `usuario@tenant` — é daqui que sai o slug do tenant. */
   account?: string;
   /** Define a máscara de permissões da sessão (ver `@/utils/permissions`). */
@@ -214,7 +215,9 @@ export type User = {
   account: string;
   name: string;
   // email: string | null;
-  telegramUser: string | null;
+  phone: string | null;
+  // telegramUser: string | null;
+  telegramVerified: boolean;
   permissions: string | null;
   role: Role;
   createdAt?: string;
@@ -228,7 +231,8 @@ export type UserPayload = {
   account?: string;
   name: string;
   // email?: string | null;
-  telegramUser?: string | null;
+  phone?: string | null;
+  // telegramUser?: string | null;
   role: Role;
   /** Obrigatória no cadastro; na edição, só quando for trocar. */
   password?: string;

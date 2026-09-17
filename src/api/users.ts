@@ -20,10 +20,8 @@ const toRequestBody = (payload: UserPayload, isUpdate: boolean) => {
   const body: Record<string, unknown> = {
     name: payload.name,
     role: payload.role,
-    // email: payload.email?.trim() ? payload.email.trim() : null,
-    telegramUser: payload.telegramUser?.trim()
-      ? payload.telegramUser.trim()
-      : null,
+    // Aqui trocamos para phone e removemos tudo que não for número (máscara)
+    phone: payload.phone?.trim() ? payload.phone : null,
   };
 
   if (!isUpdate) body.account = payload.account?.trim().toLowerCase() ?? "";
@@ -31,7 +29,6 @@ const toRequestBody = (payload: UserPayload, isUpdate: boolean) => {
 
   return body;
 };
-
 export const usersApi = {
   list: (params?: UserListParams) =>
     api.get<Paginated<User>>(COLLECTION, { params }),

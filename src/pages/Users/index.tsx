@@ -129,12 +129,36 @@ const Users: React.FC = () => {
     //     <span className="text-ink-soft">{user.email || "—"}</span>
     //   ),
     // },
+    // {
+    //   header: "Telegram",
+    //   align: "center",
+    //   width: "25%",
+    //   render: (user) => (
+    //     <span className="text-ink-soft">{user.telegramUser || "—"}</span>
+    //   ),
+    // },
     {
-      header: "Telegram",
+      header: "Telefone",
       align: "center",
       width: "25%",
       render: (user) => (
-        <span className="text-ink-soft">{user.telegramUser || "—"}</span>
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-ink-soft">{user.phone || "-"}</span>
+          
+          {/* Exibe a badge de status caso o usuário tenha um telefone cadastrado */}
+          {user.phone && (
+            <span
+              className={cn(
+                "inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+                user.telegramVerified
+                  ? "bg-primary/10 text-primary"
+                  : "bg-danger-soft text-danger"
+              )}
+            >
+              {user.telegramVerified ? "Verificado" : "Pendente"}
+            </span>
+          )}
+        </div>
       ),
     },
     {

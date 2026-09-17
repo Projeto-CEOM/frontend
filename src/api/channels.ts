@@ -16,6 +16,10 @@ export const channelsApi = {
     api.post<void>(`/api/telegram/${id}/rooms`, { roomId }),
   unlinkRoom: (id: string, roomId: string) => 
     api.del<void>(`/api/telegram/${id}/rooms/${roomId}`),
+  verifyStart: () => 
+    api.post<{ link?: string; message?: string }>("/api/users/telegram/verify/start"),
+  createGroup: (payload: { name: string; roomIds: string[]; telegramUsername?: string }) => 
+    api.post("/api/telegram/create-group", payload),
 };
 
 export type { Channel, ChannelPayload };

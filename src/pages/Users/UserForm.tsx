@@ -5,10 +5,12 @@ import {
   AtSign,
   KeyRound,
   Save,
-  Send,
+  Send, // Mantido para o código comentado do Telegram
+  Phone,
   ShieldCheck,
   User as UserIcon,
 } from "lucide-react";
+
 import { useCreateUser, useUpdateUser, useUser } from "@/api/queries/useUsers";
 import type { User } from "@/api/users";
 import RecordForm, {
@@ -40,6 +42,16 @@ type UserFormProps = {
   cancelLabel?: string;
   notice?: React.ReactNode;
   onResult?: (status: "success" | "error") => void;
+};
+
+const formatPhoneMask = (value: string) => {
+  if (!value) return "";
+  const v = value.replace(/\D/g, ""); 
+  if (v.length === 0) return "";
+  if (v.length <= 2) return `(${v}`;
+  if (v.length <= 6) return `(${v.slice(0, 2)}) ${v.slice(2)}`;
+  if (v.length <= 10) return `(${v.slice(0, 2)}) ${v.slice(2, 6)}-${v.slice(6)}`;
+  return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7, 11)}`;
 };
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -77,10 +89,24 @@ const UserForm: React.FC<UserFormProps> = ({
     defaultValues: emptyUserValues,
   });
 
-  const { reset } = form;
+  const { reset, setValue } = form;
 
   useEffect(() => {
-    if (user) reset(userToFormValues(user));
+    if (user) {
+      const values = userToFormValues(user);
+      
+      if (values.phone) {
+        let phoneToDisplay = values.phone;
+        
+        if (phoneToDisplay.startsWith("+55")) {
+          phoneToDisplay = phoneToDisplay.slice(3);
+        }
+        
+        values.phone = formatPhoneMask(phoneToDisplay);
+      }
+      
+      reset(values);
+    }
   }, [user, reset]);
 
   const blocked = Boolean(
@@ -94,28 +120,36 @@ const UserForm: React.FC<UserFormProps> = ({
   if (blocked) return null;
 
   const handleSubmit = (values: UserFormValues) => {
+    // Pega apenas os números do que foi digitado
+    const rawPhone = values.phone ? values.phone.replace(/\D/g, "") : "";
+
+    const payloadToSend = {
+      ...values,
+      // Se houver número, adiciona o +55. Se estiver vazio, envia vazio.
+      phone: rawPhone ? `+55${rawPhone}` : "",
+    };
+
     const settle = {
       onSuccess: (saved: User) => {
         if (isSelfEdit) {
           dispatch(
             sessionUserUpdated({
               name: saved.name,
-              telegramUser: saved.telegramUser,
+              phone: saved.phone,
+              // telegramUser: saved.telegramUser, // Mantido comentado
             }),
           );
         }
-
         onResult?.("success");
       },
       onError: () => onResult?.("error"),
     };
 
     if (userId) {
-      updateUser.mutate({ id: userId, payload: values }, settle);
+      updateUser.mutate({ id: userId, payload: payloadToSend }, settle);
     } else {
-      createUser.mutate(values, settle);
+      createUser.mutate(payloadToSend, settle);
     }
-
     onSaved();
   };
 
@@ -134,7 +168,7 @@ const UserForm: React.FC<UserFormProps> = ({
             name: "account" as const,
             label: "Usuário (login)",
             icon: AtSign,
-            placeholder: tenant ? `joao  →  joao@${tenant}` : "joao",
+            placeholder: tenant ? `joao -> joao@${tenant}` : "joao",
             required: true,
           },
         ]),
@@ -153,12 +187,20 @@ const UserForm: React.FC<UserFormProps> = ({
     //   placeholder: "opcional",
     //   required: false,
     // },
+    // {
+    //   name: "telegramUser",
+    //   label: "Telegram",
+    //   icon: Send,
+    //   placeholder: "opcional — ex: @joao",
+    //   required: false,
+    // },
     {
-      name: "telegramUser",
-      label: "Telegram",
-      icon: Send,
-      placeholder: "opcional — ex: @joao",
+      name: "phone",
+      label: "Telefone",
+      icon: Phone,
+      placeholder: "(49) 99999-9999 (Opcional)",
       required: false,
+      onValueChange: (val) => setValue("phone", formatPhoneMask(val)),
     },
     {
       name: "role",
@@ -194,7 +236,7 @@ const UserForm: React.FC<UserFormProps> = ({
       }
       subtitle={
         isSelfEdit
-          ? `Login ${user?.account ?? ""} — você altera nome, Telegram e senha. O papel só muda por uma conta acima da sua.`
+          ? `Login ${user?.account ?? ""} — você altera nome, Telefone e senha. O papel só muda por uma conta acima da sua.`
           : isEditing && user
             ? `Login ${user.account} — o login não pode ser alterado.`
             : "O login recebe o sufixo do tenant automaticamente."

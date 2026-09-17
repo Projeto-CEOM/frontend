@@ -53,3 +53,19 @@ export const useUnlinkRoomFromChannel = () => {
     },
   });
 };
+
+export const useVerifyTelegram = () => {
+  return useMutation({
+    mutationFn: () => channelsApi.verifyStart(),
+  });
+};
+
+export const useCreateTelegramGroup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: any) => channelsApi.createGroup(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.channels.all });
+    },
+  })
+};
