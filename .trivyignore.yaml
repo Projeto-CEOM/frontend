@@ -1,0 +1,7 @@
+# Vulnerabilidades conhecidas e aceitas pela equipe, ignoradas pelo Trivy na pipeline.
+# Adicione somente após análise criteriosa, sempre com a justificativa.
+#
+# vulnerabilities:
+#   - id: CVE-2023-12345
+#     statement: "Falso positivo: função afetada não é usada."
+vulnerabilities: []
